@@ -32,7 +32,7 @@ body{
 .title-image{
   width:min(560px, 92%);
   height:auto;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,.35));
+  filter: drop-shadow(0 4px 12px rgba(255,255,255,.35));
 }
 
 .board-wrap{
@@ -208,4 +208,5 @@ select{
   image-rendering: auto;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
 }
+
 
