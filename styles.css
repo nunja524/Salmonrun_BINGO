@@ -1,7 +1,6 @@
 :root{
   /* ご指定の背景色（万一の入力ミス時にボディ側でフォールバックあり） */
   --bg:#e65c17;
-
   --panel:#1f1b17;
   --cell:#2a2521;
   --grid-gap: min(2vw, 10px);
@@ -31,18 +30,21 @@ body{
   margin: 0 auto;
 }
 
-/* ★ キャプチャ対象（ロゴ＋盤面） */
+/* ★ キャプチャ対象（ロゴ＋盤面）：フレームは外側の背景で描く */
 .capture-area{
-  /* 縁取り（ページ背景色）を画像にも写るように “内側シャドウ” で実装 */
-  background: var(--panel);
-  border-radius: 20px;
-  padding: clamp(12px, 2.8vw, 26px);
-  box-shadow:
-    0 8px 24px rgba(0,0,0,.35),
-    inset 0 0 0 clamp(8px, 1.8vw, 16px) var(--frame); /* 太めの縁取り */
-  border: 1px solid rgba(255,255,255,.06);
+  background: var(--frame);          /* 縁取りの色 */
+  border-radius: 24px;               /* 縁取りの丸み */
+  padding: clamp(8px, 1.8vw, 16px);  /* フレームの太さ */
 }
 
+/* 内側パネル（今までのパネル見た目をこちらへ） */
+.capture-core{
+  background: var(--panel);
+  border-radius: 18px;
+  padding: clamp(12px, 2.8vw, 26px);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,.06);
+}
 .title-wrap{
   display:flex; justify-content:center; align-items:center; margin-bottom:12px;
 }
@@ -226,4 +228,3 @@ select{
   image-rendering: auto;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
 }
-
