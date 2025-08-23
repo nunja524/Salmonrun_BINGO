@@ -1,6 +1,6 @@
 :root{
   /* ご指定の背景色（万一の入力ミス時にボディ側でフォールバックあり） */
-  --bg:#65c17;
+  --bg:#e65c17;
 
   --panel:#1f1b17;
   --cell:#2a2521;
@@ -226,3 +226,4 @@ select{
   image-rendering: auto;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
 }
+
