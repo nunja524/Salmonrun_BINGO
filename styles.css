@@ -1,7 +1,7 @@
 :root{
   --bg:#8a3b00;         /* 暗めのオレンジ背景 */
-  --panel:#1f1b17;      /* 盤面背景(濃色) */
-  --cell:#2a2521;       /* マス背景 */
+  --panel:#1f1b17;
+  --cell:#2a2521;
   --grid-gap:8px;
   --radius:18px;
   --shadow:0 8px 24px rgba(0,0,0,.35);
@@ -40,12 +40,25 @@ body{
   border: 1px solid rgba(255,255,255,.06);
 }
 
+/* 盤面のレイヤ（グリッド + ラインSVGを重ねる） */
+.board-layer{
+  position: relative;
+}
+
+/* グリッド */
 .bingo-grid{
   display:grid;
   gap: var(--grid-gap);
-  /* 列数はJSで変更 */
+  --minCell: 84px;          /* セルの最小サイズ（スマホ対策） */
 }
 
+/* 「何も抽選していない状態」でも高さ0にならないように */
+.bingo-grid::after{
+  content: "";
+  display: block;
+}
+
+/* セル */
 .cell{
   background: var(--cell);
   border-radius: 12px;
@@ -55,6 +68,8 @@ body{
   aspect-ratio:1/1;
   overflow:hidden;
   position:relative;
+  min-width: var(--minCell);
+  min-height: var(--minCell);
 }
 
 .cell img{
@@ -63,6 +78,24 @@ body{
   object-fit: contain;
   user-select: none;
   pointer-events: none;
+}
+
+/* ライン用SVGを前面に重ねる */
+.line-layer{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* ラインの見た目 */
+.line{
+  stroke: var(--accent);
+  stroke-width: 8;
+  stroke-linecap: round;
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,.45));
 }
 
 .controls{
@@ -117,12 +150,33 @@ select{
   .btn{ height: 44px; }
 }
 
-/* レスポンシブ：セルの最小サイズを確保 */
-.bingo-grid{
-  /* セルの最小サイズ180pxを基準。列数はJSで固定される */
-  --minCell: 84px;
+/* ===== マーク表示 ===== */
+.mark{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 2;  /* 武器画像より前面に */
+  pointer-events: none;
 }
-.cell{
-  min-width: var(--minCell);
-  min-height: var(--minCell);
+.mark-inner{
+  display: block;
+  transform-origin: center;
+}
+.mark--circle .mark-inner{
+  width: 72%;
+  height: 72%;
+  border: 6px solid var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
+  background: transparent;
+}
+.mark--img .mark-inner{
+  width: 68%;
+  aspect-ratio: 1 / 1;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: auto;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
 }

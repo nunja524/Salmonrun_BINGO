@@ -13,9 +13,12 @@
       <img src="images/title.png" alt="サモラン・ビンゴ" class="title-image" />
     </div>
 
-    <!-- ビンゴカード本体 -->
+    <!-- 盤面（グリッド + ライン用SVGを重ねる） -->
     <section class="board-wrap">
-      <div id="bingo" class="bingo-grid"><!-- 初期は空 --></div>
+      <div class="board-layer">
+        <div id="bingo" class="bingo-grid"><!-- JSでセル生成 --></div>
+        <svg id="lineLayer" class="line-layer" aria-hidden="true"></svg>
+      </div>
     </section>
 
     <!-- コントロール -->
@@ -38,6 +41,26 @@
           <option value="include">含める</option>
           <option value="kuma_only">クマのみ</option>
         </select>
+      </label>
+
+      <!-- 既存：マーク設定 -->
+      <label class="control-item">
+        マーク
+        <select id="markerStyle" aria-label="マークの種類">
+          <option value="circle" selected>○（丸）</option>
+          <option value="fish">さかな</option>
+        </select>
+      </label>
+
+      <label class="control-item">
+        手書き風ズレ
+        <input type="checkbox" id="jitterToggle" aria-label="手書き風ズレを有効化">
+      </label>
+
+      <!-- 追加：ライン表示のON/OFF -->
+      <label class="control-item">
+        ライン表示
+        <input type="checkbox" id="lineToggle" checked>
       </label>
     </section>
 
