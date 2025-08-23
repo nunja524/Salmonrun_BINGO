@@ -1,5 +1,5 @@
 :root{
-  --bg:#8a3b00;         /* 暗めのオレンジ背景 */
+  --bg:#e17b34;         /* 暗めのオレンジ背景 */
   --panel:#1f1b17;
   --cell:#2a2521;
   --grid-gap: min(2vw, 10px);
@@ -208,3 +208,4 @@ select{
   image-rendering: auto;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
 }
+
