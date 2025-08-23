@@ -9,17 +9,21 @@
 </head>
 <body>
   <main class="container">
-    <!-- タイトル画像 -->
-    <div class="title-wrap">
-      <img src="images/title.png" alt="サモラン・ビンゴ" class="title-image" />
-    </div>
 
-    <!-- 盤面（グリッド + ライン用SVGを重ねる） -->
-    <section class="board-wrap" id="boardWrap">
-      <div class="board-layer">
-        <div id="bingo" class="bingo-grid"><!-- JSでセル生成 --></div>
-        <svg id="lineLayer" class="line-layer" aria-hidden="true"></svg>
+    <!-- ★ キャプチャ対象（ロゴ＋盤面）をひとつにまとめる -->
+    <section id="captureArea" class="capture-area">
+      <!-- タイトル画像（キャプチャに含める） -->
+      <div class="title-wrap">
+        <img src="images/title.png" alt="サモラン・ビンゴ" class="title-image" />
       </div>
+
+      <!-- 盤面（グリッド + ライン用SVGを重ねる） -->
+      <section class="board-wrap" id="boardWrap">
+        <div class="board-layer">
+          <div id="bingo" class="bingo-grid"><!-- JSでセル生成 --></div>
+          <svg id="lineLayer" class="line-layer" aria-hidden="true"></svg>
+        </div>
+      </section>
     </section>
 
     <!-- コントロール -->
@@ -44,14 +48,14 @@
         </select>
       </label>
 
-<label class="control-item">
-  マーク
-  <select id="markerStyle" aria-label="マークの種類">
-    <option value="circle" selected>○（丸）</option>
-    <option value="golden_roe">金イクラ</option>
-    <option value="stamp">ウルトラハンコ</option>
-  </select>
-</label>
+      <label class="control-item">
+        マーク
+        <select id="markerStyle" aria-label="マークの種類">
+          <option value="circle" selected>○（丸）</option>
+          <option value="golden_roe">金イクラ</option>
+          <option value="stamp">ウルトラハンコ</option>
+        </select>
+      </label>
 
       <label class="control-item">
         手書き風ズレ

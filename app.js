@@ -23,7 +23,7 @@ let currentGridSize = parseInt(sizeSelect.value, 10);
 let state = {
   size: currentGridSize,
   kumaMode: kumaSelect.value,           // exclude | include | kuma_only
-  markerStyle: markerStyleSelect.value, // circle | fish
+  markerStyle: markerStyleSelect.value, // circle | golden_roe | stamp
   jitter: !!jitterToggle.checked,
   showLines: !!lineToggle.checked,
   board: [],                            // 後で初期化
@@ -119,7 +119,7 @@ function toggleCell(cell, idx) {
 function renderEmptyGrid(size){
   bingoEl.innerHTML = "";
   lineLayer.innerHTML = "";
-  // ← 重要：スマホで溢れないよう minmax(0,1fr)
+  // スマホ溢れ防止
   bingoEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
 
   const total = size * size;
@@ -147,7 +147,7 @@ function renderEmptyGrid(size){
 function renderBingo(size){
   bingoEl.innerHTML = "";
   lineLayer.innerHTML = "";
-  // ← 重要：スマホで溢れないよう minmax(0,1fr)
+  // スマホ溢れ防止
   bingoEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
 
   const total = size * size;
@@ -271,7 +271,8 @@ function updateLines(){
 
 // ========= 画像書き出し =========
 function getCaptureElement(){
-  return document.getElementById("boardWrap");
+  // ★ タイトル＋盤面をまとめた要素をキャプチャする
+  return document.getElementById("captureArea");
 }
 function buildFilename(){
   const size = state.size;

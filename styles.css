@@ -1,5 +1,7 @@
 :root{
-  --bg:#e65c17;         /* 暗めのオレンジ背景 */
+  /* ご指定の背景色（万一の入力ミス時にボディ側でフォールバックあり） */
+  --bg:#65c17;
+
   --panel:#1f1b17;
   --cell:#2a2521;
   --grid-gap: min(2vw, 10px);
@@ -8,12 +10,15 @@
   --text:#f6e7d7;
   --accent:#f1a343;
   --minCell: clamp(60px, 12vw, 110px); /* スマホ〜PCでタッチしやすく */
+  --frame: var(--bg); /* 縁取り色：デフォは背景色 */
 }
 
 *{ box-sizing: border-box; }
 html,body{ height:100%; }
 body{
   margin:0;
+  /* フォールバック → 変数（無効時/タイプミス時でも#065c17で表示される） */
+  background: #065c17;
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
@@ -26,13 +31,25 @@ body{
   margin: 0 auto;
 }
 
+/* ★ キャプチャ対象（ロゴ＋盤面） */
+.capture-area{
+  /* 縁取り（ページ背景色）を画像にも写るように “内側シャドウ” で実装 */
+  background: var(--panel);
+  border-radius: 20px;
+  padding: clamp(12px, 2.8vw, 26px);
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.35),
+    inset 0 0 0 clamp(8px, 1.8vw, 16px) var(--frame); /* 太めの縁取り */
+  border: 1px solid rgba(255,255,255,.06);
+}
+
 .title-wrap{
   display:flex; justify-content:center; align-items:center; margin-bottom:12px;
 }
 .title-image{
   width:min(560px, 92%);
   height:auto;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,.65));
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.35));
 }
 
 .board-wrap{
@@ -199,6 +216,7 @@ select{
   box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
   background: transparent;
 }
+/* 画像系マーク（共通：金イクラ/ウルトラハンコ） */
 .mark--img .mark-inner{
   width: 68%;
   aspect-ratio: 1 / 1;
