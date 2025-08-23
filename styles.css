@@ -70,17 +70,32 @@ body{
 }
 
 /* ロゴ：白縁はクローン（.title-stroke）で作るので filter は使わない */
-.title-stack{ position: relative; display: inline-block; }
+.title-stack{
+  position: relative;
+  display: inline-block;
+  width: min(560px, 92%);   /* ← 幅指定をコンテナへ */
+}
 .title-image{
-  width:min(560px, 92%);
-  height:auto;
+  width: 100%;              /* ← 画像はコンテナにフィット */
+  height: auto;
   position: relative;
   z-index: 1;
+}
+.title-stroke-canvas{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
 }
 /* 生成される白縁クローン */
 .title-stroke{
   position:absolute;
   inset:0;
+  width: 100%;              /* ← 追加 */
+  height: 100%;             /* ← 追加 */
+  object-fit: contain;      /* ← 念のため */
   z-index:0;
   pointer-events:none;
   filter:none;
