@@ -4,7 +4,7 @@
   --cell:#2a2521;
   --grid-gap: min(2vw, 10px);
 
-  /* 角丸を控えめに（“ちょい丸四角”） */
+  /* 角丸（控えめ） */
   --radius-outer:16px;   /* capture-area */
   --radius-core:12px;    /* capture-core */
   --radius-panel:12px;   /* board-wrap */
@@ -55,23 +55,37 @@ body{
   background-clip: padding-box;
 }
 
+/* キャプチャ時に線の出やすい影/ボーダーを無効化 */
+.capture-clean .capture-core,
+.capture-clean .board-wrap{
+  box-shadow: none !important;
+  border: none !important;
+}
+.capture-clean .capture-core{
+  background-clip: padding-box !important;
+}
+
 .title-wrap{
   display:flex; justify-content:center; align-items:center; margin-bottom:12px;
 }
+
+/* ロゴ：白縁はクローン（.title-stroke）で作るので filter は使わない */
+.title-stack{ position: relative; display: inline-block; }
 .title-image{
   width:min(560px, 92%);
   height:auto;
-  /* ロゴ白縁取り（html2canvas互換の多重drop-shadow） */
-  filter:
-    drop-shadow( 0  0   0 #fff)
-    drop-shadow( 0  1px 0 #fff)
-    drop-shadow( 0 -1px 0 #fff)
-    drop-shadow( 1px 0   0 #fff)
-    drop-shadow(-1px 0   0 #fff)
-    drop-shadow( 1px  1px 0 #fff)
-    drop-shadow(-1px -1px 0 #fff)
-    drop-shadow( 1px -1px 0 #fff)
-    drop-shadow(-1px  1px 0 #fff);
+  position: relative;
+  z-index: 1;
+}
+/* 生成される白縁クローン */
+.title-stroke{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  filter:none;
+  opacity:1;
+  mix-blend-mode:normal;
 }
 
 .board-wrap{
@@ -112,15 +126,10 @@ body{
   touch-action: manipulation;
   box-sizing: border-box;
 }
-.cell::before{
-  content:"";
-  display:block;
-  padding-top:100%;
-}
+.cell::before{ content:""; display:block; padding-top:100%; }
 
 /* 画像・マークをセルいっぱいに中央配置（絶対配置） */
-.cell > img,
-.cell > .mark{ position:absolute; inset:0; }
+.cell > img, .cell > .mark{ position:absolute; inset:0; }
 
 .cell img{
   width:88%; height:88%;

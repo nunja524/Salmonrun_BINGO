@@ -14,9 +14,11 @@
     <section id="captureArea" class="capture-area">
       <div class="capture-core">
 
-        <!-- タイトル画像（白縁取りはCSSのdrop-shadowで実現） -->
+        <!-- タイトル：白縁はJSでクローンを生成 -->
         <div class="title-wrap">
-          <img src="images/title.png" alt="サモラン・ビンゴ" class="title-image" />
+          <div id="titleStack" class="title-stack">
+            <img src="images/title.png" alt="サモラン・ビンゴ" class="title-image" />
+          </div>
         </div>
 
         <!-- 盤面 -->
@@ -73,7 +75,7 @@
       </label>
     </section>
 
-    <!-- ボタン群（カラー版） -->
+    <!-- ボタン群 -->
     <section class="buttons">
       <button class="btn btn--primary" id="btnGenerate" type="button">ビンゴカード作成</button>
       <button class="btn btn--reset" id="btnReset" type="button">リセット</button>

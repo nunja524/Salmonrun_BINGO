@@ -64,6 +64,7 @@ const pickWeapons = (pool, count, allowDuplicates=false) => {
 
 // ========= グリッド密度制御（6列以上でdense） =========
 function applyGridTightness(size){
+  // 6列以上は詰め配置（dense）でオーバーフローを抑える
   if (size >= 6){
     bingoEl.classList.add("dense");
   }else{
@@ -128,6 +129,7 @@ function toggleCell(cell, idx) {
 function renderEmptyGrid(size){
   bingoEl.innerHTML = "";
   lineLayer.innerHTML = "";
+  // スマホ溢れ防止：minmax(0,1fr)
   bingoEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
   applyGridTightness(size);
 
@@ -238,7 +240,7 @@ function clearLines(){
 function drawLine(p1, p2){
   const line = document.createElementNS("http://www.w3.org/2000/svg","line");
   line.setAttribute("x1", p1.x);
-  line.setAttribute("y1", p2 ? p1.y : p1.y); // safety
+  line.setAttribute("y1", p1.y);
   line.setAttribute("x2", p2.x);
   line.setAttribute("y2", p2.y);
   line.setAttribute("class","line");
@@ -278,10 +280,76 @@ function updateLines(){
   }
 }
 
-// ========= 画像書き出し =========
-function getCaptureElement(){
-  return document.getElementById("captureArea"); // ロゴ＋盤面＋縁取り
+// ========= ロゴ白縁（8方向クローン生成） =========
+function buildTitleStroke(){
+  const stack = document.getElementById("titleStack");
+  if (!stack) return;
+  const img = stack.querySelector(".title-image");
+  if (!img) return;
+
+  // 既存の白縁クローンを掃除
+  stack.querySelectorAll(".title-stroke").forEach(n => n.remove());
+
+  const d = 1.5; // 太さ（1〜2.5pxで調整可）
+  const offsets = [
+    {x:  d, y:  0}, {x: -d, y:  0}, {x:  0, y:  d}, {x:  0, y: -d},
+    {x:  d, y:  d}, {x:  d, y: -d}, {x: -d, y:  d}, {x: -d, y: -d}
+  ];
+
+  const ensure = () => {
+    offsets.forEach(({x,y}) => {
+      const clone = img.cloneNode(false);
+      clone.className = "title-stroke";
+      clone.style.transform = `translate(${x}px, ${y}px)`;
+      clone.style.filter = "none";
+      clone.style.opacity = "1";
+      clone.setAttribute("aria-hidden", "true");
+      stack.appendChild(clone);
+    });
+  };
+
+  if (img.complete) ensure();
+  else img.addEventListener("load", ensure, { once: true });
 }
+
+// ========= キャプチャ（クリーンモードON/OFF） =========
+function setCleanCaptureMode(on){
+  const area = document.getElementById("captureArea");
+  if (!area) return;
+  if (on) area.classList.add("capture-clean");
+  else    area.classList.remove("capture-clean");
+}
+
+async function exportBoardAsImage(){
+  const target = document.getElementById("captureArea");
+  if (!target) throw new Error("キャプチャ対象が見つかりません。");
+
+  // 最新化
+  updateLines();
+  buildTitleStroke();
+
+  // クリーン化 → 次フレームで確定 → キャプチャ → 復帰
+  setCleanCaptureMode(true);
+  await new Promise(r => requestAnimationFrame(r));
+
+  const scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+  const canvas = await html2canvas(target, {
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: null,
+    scale
+  });
+
+  setCleanCaptureMode(false);
+
+  return new Promise((resolve)=>{
+    canvas.toBlob((blob)=>{
+      resolve({ blob, dataURL: canvas.toDataURL("image/png") });
+    }, "image/png", 1.0);
+  });
+}
+
+// ========= 画像保存 / 共有 =========
 function buildFilename(){
   const size = state.size;
   const modeLabel = state.kumaMode === "exclude" ? "no-kuma" : state.kumaMode === "include" ? "with-kuma" : "kuma-only";
@@ -297,26 +365,6 @@ function downloadBlob(blob, filename){
   a.remove();
   URL.revokeObjectURL(url);
 }
-async function exportBoardAsImage(){
-  const target = getCaptureElement();
-  if (!target) throw new Error("キャプチャ対象が見つかりません。");
-  updateLines(); // 最新レイアウトに
-
-  const scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
-  const canvas = await html2canvas(target, {
-    useCORS: true,
-    allowTaint: false,
-    backgroundColor: null,
-    scale
-  });
-
-  return new Promise((resolve)=>{
-    canvas.toBlob((blob)=>{
-      resolve({ blob, dataURL: canvas.toDataURL("image/png") });
-    }, "image/png", 1.0);
-  });
-}
-
 async function saveImageOnly(){
   try{
     const { blob } = await exportBoardAsImage();
@@ -326,7 +374,6 @@ async function saveImageOnly(){
     alert("画像の書き出しに失敗しました。");
   }
 }
-
 async function shareTwitter(){
   try{
     const { blob } = await exportBoardAsImage();
@@ -377,14 +424,6 @@ function applyStateToUI(){
   markerStyleSelect.value = state.markerStyle;
   jitterToggle.checked = !!state.jitter;
   lineToggle.checked = !!state.showLines;
-}
-
-function buildBoardFromWeapons(weaponsArr){
-  const total = state.size * state.size;
-  state.board = Array.from({length: total}, (_, i) => ({
-    weapon: weaponsArr[i] ?? null,
-    selected: false
-  }));
 }
 
 // ========= 生成/リセット =========
@@ -472,11 +511,14 @@ jitterToggle.addEventListener("change", () => {
   scheduleSave();
 });
 
-// リサイズでライン再計算（レスポンシブ）
+// リサイズでライン再計算（＆ロゴ縁の再配置）
 let resizeTimer = null;
 window.addEventListener("resize", () => {
   if (resizeTimer) cancelAnimationFrame(resizeTimer);
-  resizeTimer = requestAnimationFrame(updateLines);
+  resizeTimer = requestAnimationFrame(() => {
+    updateLines();
+    buildTitleStroke();
+  });
 });
 
 // ========= 起動処理 =========
@@ -533,4 +575,7 @@ window.addEventListener("resize", () => {
     renderEmptyGrid(state.size);
     scheduleSave();
   }
+
+  // ロゴ白縁を構築
+  buildTitleStroke();
 })();
