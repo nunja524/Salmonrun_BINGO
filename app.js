@@ -78,9 +78,12 @@ function createMark(style, jitterEnabled) {
   const inner = document.createElement("div");
   inner.className = "mark-inner";
 
-  if (style === "fish") {
+  if (style === "golden_roe") {
     wrap.classList.add("mark--img");
     inner.style.backgroundImage = "url('images/markers/fish.png')";
+  } else if (style === "stamp") {
+    wrap.classList.add("mark--img");
+    inner.style.backgroundImage = "url('images/markers/uhanko.png')";
   } else {
     wrap.classList.add("mark--circle");
   }
