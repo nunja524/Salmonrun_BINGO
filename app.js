@@ -22,11 +22,11 @@ let currentGridSize = parseInt(sizeSelect.value, 10);
 // 保存対象の状態（boardは size*size の配列、各要素 { weapon?:{name,img,tag}|null, selected:boolean }）
 let state = {
   size: currentGridSize,
-  kumaMode: kumaSelect.value,         // exclude | include | kuma_only
+  kumaMode: kumaSelect.value,           // exclude | include | kuma_only
   markerStyle: markerStyleSelect.value, // circle | fish
   jitter: !!jitterToggle.checked,
   showLines: !!lineToggle.checked,
-  board: [],                          // 後で初期化
+  board: [],                            // 後で初期化
 };
 
 // ========= ユーティリティ =========
@@ -116,10 +116,10 @@ function toggleCell(cell, idx) {
 function renderEmptyGrid(size){
   bingoEl.innerHTML = "";
   lineLayer.innerHTML = "";
-  bingoEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  // ← 重要：スマホで溢れないよう minmax(0,1fr)
+  bingoEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
 
   const total = size * size;
-  // state.boardがサイズ合わない場合は初期化
   if (!state.board || state.board.length !== total){
     state.board = Array.from({length: total}, () => ({ weapon: null, selected: false }));
   }
@@ -128,11 +128,8 @@ function renderEmptyGrid(size){
     const cell = document.createElement("div");
     cell.className = "cell";
     cell.dataset.selected = state.board[i].selected ? "true" : "false";
-
-    // 空セルでもON/OFFできる
     cell.addEventListener("click", () => toggleCell(cell, i));
 
-    // （武器が無いので画像なし）→ マークだけ復元
     if (state.board[i].selected){
       const mark = createMark(state.markerStyle, state.jitter);
       cell.appendChild(mark);
@@ -147,7 +144,8 @@ function renderEmptyGrid(size){
 function renderBingo(size){
   bingoEl.innerHTML = "";
   lineLayer.innerHTML = "";
-  bingoEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  // ← 重要：スマホで溢れないよう minmax(0,1fr)
+  bingoEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
 
   const total = size * size;
   for (let i = 0; i < total; i++){
@@ -275,9 +273,6 @@ function getCaptureElement(){
 function buildFilename(){
   const size = state.size;
   const modeLabel = state.kumaMode === "exclude" ? "no-kuma" : state.kumaMode === "include" ? "with-kuma" : "kuma-only";
-  const ts = new Date();
-  const pad = (n)=> String(n).padStart(2,"0");
-  const stamp = `${ts.getFullYear()}-${pad(ts.getMonth()+1)}-${pad(ts.getDate())}_${pad(ts.getHours())}-${pad(ts.getMinutes())}`;
   return `salmon-bingo_${size}x${size}_${modeLabel}.png`;
 }
 function downloadBlob(blob, filename){
@@ -373,7 +368,6 @@ function applyStateToUI(){
 }
 
 function buildBoardFromWeapons(weaponsArr){
-  // weaponsArr: size*size の配列（weaponオブジェクト or null）
   const total = state.size * state.size;
   state.board = Array.from({length: total}, (_, i) => ({
     weapon: weaponsArr[i] ?? null,

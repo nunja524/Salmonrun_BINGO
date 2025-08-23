@@ -42,6 +42,7 @@ body{
   box-shadow: var(--shadow);
   border: 1px solid rgba(255,255,255,.06);
   touch-action: manipulation;
+  overflow: hidden; /* 盤面エリア外へのはみ出しを抑制 */
 }
 
 /* 盤面のレイヤ（グリッド + ラインSVGを重ねる） */
@@ -53,9 +54,10 @@ body{
 .bingo-grid{
   display:grid;
   gap: var(--grid-gap);
+  width: 100%;
 }
 
-/* 「何も抽選していない状態」でも高さ0にならないようにダミーブロック */
+/* 「未抽選」でも高さ0にならないダミーブロック */
 .bingo-grid::after{
   content: "";
   display: block;
@@ -74,6 +76,7 @@ body{
   min-width: var(--minCell);
   min-height: var(--minCell);
   touch-action: manipulation;
+  box-sizing: border-box; /* ボーダー込みで幅計算 */
 }
 
 .cell img{
@@ -154,8 +157,25 @@ select{
 .btn:hover{ transform: translateY(-1px); }
 .btn:active{ transform: translateY(1px) scale(.99); }
 
-@media (max-width:640px){
-  .btn{ height: 48px; }
+@media (max-width:480px){
+  :root{
+    --grid-gap: 6px;
+    --minCell: clamp(44px, 22vw, 80px);
+  }
+  .container{ padding: 10px 8px 52px; }
+  .board-wrap{ padding: 8px; }
+  .btn{ height: 46px; }
+}
+
+@media (max-width:360px){
+  :root{
+    --grid-gap: 5px;
+    --minCell: clamp(40px, 24vw, 70px);
+  }
+  .cell{
+    min-width: 0;
+    min-height: 0;
+  }
 }
 
 /* ===== マーク表示 ===== */
