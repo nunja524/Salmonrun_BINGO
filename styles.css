@@ -1,6 +1,5 @@
 :root{
-  /* ご指定の背景色（万一の入力ミス時にボディ側でフォールバックあり） */
-  --bg:#e65c17;
+  --bg:#e65c17;            /* 背景色（任意で変更可） */
   --panel:#1f1b17;
   --cell:#2a2521;
   --grid-gap: min(2vw, 10px);
@@ -8,16 +7,18 @@
   --shadow:0 8px 24px rgba(0,0,0,.35);
   --text:#f6e7d7;
   --accent:#f1a343;
-  --minCell: clamp(60px, 12vw, 110px); /* スマホ〜PCでタッチしやすく */
-  --frame: var(--bg); /* 縁取り色：デフォは背景色 */
+  --minCell: clamp(60px, 12vw, 110px);
+  --frame: var(--bg);      /* 縁取り色 */
+  --brand:#39964C;         /* 通常ボタン色（ご指定） */
+  --brand-press:#2f7f40;   /* 押下/hover用の濃色 */
+  --twitter:#1DA1F2;       /* 青い鳥カラー */
+  --twitter-press:#1a90da; /* 押下/hover用の濃色 */
 }
 
 *{ box-sizing: border-box; }
 html,body{ height:100%; }
 body{
   margin:0;
-  /* フォールバック → 変数（無効時/タイプミス時でも#065c17で表示される） */
-  background: #065c17;
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
@@ -30,28 +31,39 @@ body{
   margin: 0 auto;
 }
 
-/* ★ キャプチャ対象（ロゴ＋盤面）：フレームは外側の背景で描く */
+/* キャプチャ対象：枠は外側の背景色で確実に描画 */
 .capture-area{
-  background: var(--frame);          /* 縁取りの色 */
-  border-radius: 24px;               /* 縁取りの丸み */
-  padding: clamp(8px, 1.8vw, 16px);  /* フレームの太さ */
+  background: var(--frame);
+  border-radius: 24px;
+  padding: clamp(8px, 1.8vw, 16px); /* 縁取りの太さ */
 }
-
-/* 内側パネル（今までのパネル見た目をこちらへ） */
 .capture-core{
   background: var(--panel);
   border-radius: 18px;
   padding: clamp(12px, 2.8vw, 26px);
   box-shadow: var(--shadow);
   border: 1px solid rgba(255,255,255,.06);
+  background-clip: padding-box;
 }
+
 .title-wrap{
   display:flex; justify-content:center; align-items:center; margin-bottom:12px;
 }
 .title-image{
   width:min(560px, 92%);
   height:auto;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,.35));
+
+  /* ★ ロゴの白縁取り（html2canvas対応のためdrop-shadowを多重適用） */
+  filter:
+    drop-shadow( 0  0   0 #fff)
+    drop-shadow( 0  1px 0 #fff)
+    drop-shadow( 0 -1px 0 #fff)
+    drop-shadow( 1px 0   0 #fff)
+    drop-shadow(-1px 0   0 #fff)
+    drop-shadow( 1px  1px 0 #fff)
+    drop-shadow(-1px -1px 0 #fff)
+    drop-shadow( 1px -1px 0 #fff)
+    drop-shadow(-1px  1px 0 #fff);
 }
 
 .board-wrap{
@@ -61,13 +73,10 @@ body{
   box-shadow: var(--shadow);
   border: 1px solid rgba(255,255,255,.06);
   touch-action: manipulation;
-  overflow: hidden; /* 盤面エリア外へのはみ出しを抑制 */
+  overflow: hidden;
 }
 
-/* 盤面のレイヤ（グリッド + ラインSVGを重ねる） */
-.board-layer{
-  position: relative;
-}
+.board-layer{ position: relative; }
 
 /* グリッド */
 .bingo-grid{
@@ -75,12 +84,8 @@ body{
   gap: var(--grid-gap);
   width: 100%;
 }
-
-/* 「未抽選」でも高さ0にならないダミーブロック */
-.bingo-grid::after{
-  content: "";
-  display: block;
-}
+/* 未抽選時の高さ0回避 */
+.bingo-grid::after{ content:""; display:block; }
 
 /* セル */
 .cell{
@@ -95,28 +100,17 @@ body{
   min-width: var(--minCell);
   min-height: var(--minCell);
   touch-action: manipulation;
-  box-sizing: border-box; /* ボーダー込みで幅計算 */
+  box-sizing: border-box;
 }
-
 .cell img{
-  width: 88%;
-  height: 88%;
-  object-fit: contain;
-  user-select: none;
-  pointer-events: none;
+  width:88%; height:88%; object-fit:contain; user-select:none; pointer-events:none;
 }
 
-/* ライン用SVGを前面に重ねる */
+/* ライン */
 .line-layer{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
+  position:absolute; inset:0; width:100%; height:100%;
+  pointer-events:none; overflow:visible;
 }
-
-/* ラインの見た目 */
 .line{
   stroke: var(--accent);
   stroke-width: clamp(5px, 1.2vw, 8px);
@@ -124,107 +118,79 @@ body{
   filter: drop-shadow(0 3px 4px rgba(0,0,0,.45));
 }
 
+/* コントロール */
 .controls{
   margin: 14px auto 10px;
-  display:flex;
-  gap: 10px;
-  row-gap: 10px;
-  flex-wrap:wrap;
-  align-items:center;
-  justify-content:center;
+  display:flex; gap:10px; row-gap:10px; flex-wrap:wrap; align-items:center; justify-content:center;
 }
-
 .control-item{
-  display:flex;
-  align-items:center;
-  gap:8px;
+  display:flex; align-items:center; gap:8px;
   background: rgba(0,0,0,.25);
   border: 1px solid rgba(255,255,255,.08);
-  padding: 8px 12px;
-  border-radius: 12px;
+  padding: 8px 12px; border-radius: 12px;
 }
-
 select{
-  appearance:none;
-  background: #342c27;
-  color: var(--text);
-  border: 1px solid rgba(255,255,255,.12);
-  padding: 10px 12px;
-  border-radius: 10px;
-  outline: none;
-  font-size: 16px;
+  appearance:none; background:#342c27; color:var(--text);
+  border:1px solid rgba(255,255,255,.12); padding:10px 12px; border-radius:10px; outline:none; font-size:16px;
 }
 
+/* ボタン */
 .buttons, .share{
-  display:flex;
-  gap: 12px;
-  justify-content:center;
-  align-items:center;
-  margin-top: 10px;
-  flex-wrap: wrap;
+  display:flex; gap:12px; justify-content:center; align-items:center; margin-top:10px; flex-wrap:wrap;
 }
-
 .btn{
-  height: 52px;
-  width: auto;
-  cursor: pointer;
-  user-select:none;
-  transition: transform .06s ease, filter .2s ease;
-  filter: drop-shadow(0 4px 10px rgba(0,0,0,.3));
-  -webkit-user-drag: none;
+  --padX: 18px; --padY: 12px;
+  display:inline-flex; align-items:center; gap:8px;
+  padding: var(--padY) var(--padX);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  font-weight: 700; font-size: 16px; letter-spacing: .02em;
+  cursor: pointer; user-select:none; -webkit-user-drag:none;
+  transition: transform .06s ease, filter .2s ease, background-color .15s ease, border-color .15s ease, color .15s ease;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,.25);
 }
 .btn:hover{ transform: translateY(-1px); }
 .btn:active{ transform: translateY(1px) scale(.99); }
+.btn:focus-visible{ outline: 3px solid rgba(255,255,255,.4); outline-offset: 2px; }
 
+/* 通常：#39964C */
+.btn--primary{ background: var(--brand); }
+.btn--primary:hover{ background: var(--brand-press); }
+.btn--outline{ background: transparent; border-color: var(--brand); color:#fff; }
+.btn--outline:hover{ background: rgba(57,150,76,.18); }
+.btn--ghost{ background: transparent; border-color: transparent; color:#fff; }
+.btn--ghost:hover{ background: rgba(255,255,255,.08); }
+
+/* Twitter：#1DA1F2 */
+.btn--twitter{
+  background: var(--twitter); color:#fff;
+}
+.btn--twitter:hover{
+  background: var(--twitter-press);
+}
+.btn .icon{ width:20px; height:20px; display:block; }
+
+/* レスポンシブ微調整 */
 @media (max-width:480px){
-  :root{
-    --grid-gap: 6px;
-    --minCell: clamp(44px, 22vw, 80px);
-  }
+  :root{ --grid-gap: 6px; --minCell: clamp(44px, 22vw, 80px); }
   .container{ padding: 10px 8px 52px; }
   .board-wrap{ padding: 8px; }
-  .btn{ height: 46px; }
+  .btn{ font-size:15px; --padX:16px; --padY:11px; }
 }
-
 @media (max-width:360px){
-  :root{
-    --grid-gap: 5px;
-    --minCell: clamp(40px, 24vw, 70px);
-  }
-  .cell{
-    min-width: 0;
-    min-height: 0;
-  }
+  :root{ --grid-gap: 5px; --minCell: clamp(40px, 24vw, 70px); }
+  .cell{ min-width:0; min-height:0; }
 }
 
-/* ===== マーク表示 ===== */
-.mark{
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  z-index: 2;  /* 武器画像より前面に */
-  pointer-events: none;
-}
-.mark-inner{
-  display: block;
-  transform-origin: center;
-}
+/* マーク（○／画像） */
+.mark{ position:absolute; inset:0; display:grid; place-items:center; z-index:2; pointer-events:none; }
+.mark-inner{ display:block; transform-origin:center; }
 .mark--circle .mark-inner{
-  width: 72%;
-  height: 72%;
-  border: clamp(4px, 0.9vw, 6px) solid var(--accent);
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
-  background: transparent;
+  width:72%; height:72%; border:clamp(4px, .9vw, 6px) solid var(--accent);
+  border-radius:50%; box-shadow:0 0 0 2px rgba(0,0,0,.15) inset; background:transparent;
 }
-/* 画像系マーク（共通：金イクラ/ウルトラハンコ） */
 .mark--img .mark-inner{
-  width: 68%;
-  aspect-ratio: 1 / 1;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  image-rendering: auto;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+  width:68%; aspect-ratio:1/1; background-repeat:no-repeat; background-position:center; background-size:contain;
+  image-rendering:auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
 }
