@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>サモラン ビンゴ</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <!-- タイトル画像 -->
+    <div class="title-wrap">
+      <img src="images/title.png" alt="サモラン・ビンゴ" class="title-image" />
+    </div>
+
+    <!-- ビンゴカード本体 -->
+    <section class="board-wrap">
+      <div id="bingo" class="bingo-grid"><!-- 初期は空 --></div>
+    </section>
+
+    <!-- コントロール -->
+    <section class="controls">
+      <label class="control-item">
+        サイズ
+        <select id="sizeSelect" aria-label="ビンゴサイズ">
+          <option value="3">3 × 3</option>
+          <option value="4">4 × 4</option>
+          <option value="5" selected>5 × 5</option>
+          <option value="6">6 × 6</option>
+          <option value="7">7 × 7</option>
+        </select>
+      </label>
+
+      <label class="control-item">
+        クマブキ
+        <select id="kumaSelect" aria-label="クマブキ設定">
+          <option value="exclude" selected>含めない</option>
+          <option value="include">含める</option>
+          <option value="kuma_only">クマのみ</option>
+        </select>
+      </label>
+    </section>
+
+    <!-- ボタン群（画像ボタン） -->
+    <section class="buttons">
+      <img src="images/btn-generate.png" alt="ビンゴカード作成" class="btn" id="btnGenerate" />
+      <img src="images/btn-reset.png" alt="リセット" class="btn" id="btnReset" />
+    </section>
+
+    <section class="share">
+      <img src="images/btn-twitter.png" alt="Twitterに投稿" class="btn" id="btnTwitter" />
+    </section>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

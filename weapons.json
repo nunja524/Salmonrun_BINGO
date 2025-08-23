@@ -1,0 +1,357 @@
+[
+ {
+   "name": "ボールドマーカー",
+   "img": "images/Sploosh-o-matic.png",
+   "tag": "normal"
+ },
+ {
+   "name": "わかばシューター",
+   "img": "images/SplattershotJr.png",
+   "tag": "normal"
+ },
+ {
+   "name": "シャープマーカー",
+   "img": "images/Splash-o-matic.png",
+   "tag": "normal"
+ },
+ {
+   "name": "プロモデラーMG",
+   "img": "images/AerosprayMG.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スプラシューター",
+   "img": "images/Splattershot.png",
+   "tag": "normal"
+ },
+ {
+   "name": ".52ガロン",
+   "img": "images/52Gal.png",
+   "tag": "normal"
+ },
+ {
+   "name": "N-ZAP85",
+   "img": "images/N-ZAP85.png",
+   "tag": "normal"
+ },
+ {
+   "name": "プライムシューター",
+   "img": "images/SplattershotPro.png",
+   "tag": "normal"
+ },
+ {
+   "name": ".96ガロン",
+   "img": "images/96Gal.png",
+   "tag": "normal"
+ },
+ {
+   "name": "L3リールガン",
+   "img": "images/L-3Nozzlenose.png",
+   "tag": "normal"
+ },
+ {
+   "name": "H3リールガン",
+   "img": "images/H-3Nozzlenose.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ボトルガイザー",
+   "img": "images/Squeezer.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ジェットスイーパー",
+   "img": "images/JetSquelcher.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スペースシューター",
+   "img": "images/SplattershotNova.png",
+   "tag": "normal"
+ },
+ {
+   "name": "カーボンローラー",
+   "img": "images/CarbonRoller.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スプラローラー",
+   "img": "images/SplatRoller.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ダイナモローラー",
+   "img": "images/DynamoRoller.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ヴァリアブルローラー",
+   "img": "images/FlingzaRoller.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ワイドローラー",
+   "img": "images/BigSwigRoller.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スクイックリンα",
+   "img": "images/ClassicSquiffer.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スプラチャージャー",
+   "img": "images/SplatCharger.png",
+   "tag": "normal"
+ },
+ {
+   "name": "リッター4K",
+   "img": "images/E-liter4K.png",
+   "tag": "normal"
+ },
+ {
+   "name": "14式竹筒銃・甲",
+   "img": "images/Bamboozler14MkI.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ソイチューバー",
+   "img": "images/GooTuber.png",
+   "tag": "normal"
+ },
+ {
+   "name": "R-PEN/5H",
+   "img": "images/Snipewriter5H.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ノヴァブラスター",
+   "img": "images/LunaBlaster.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ホットブラスター",
+   "img": "images/Blaster.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ロングブラスター",
+   "img": "images/RangeBlaster.png",
+   "tag": "normal"
+ },
+ {
+   "name": "クラッシュブラスター",
+   "img": "images/ClashBlaster.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ラピッドブラスター",
+   "img": "images/RapidBlaster.png",
+   "tag": "normal"
+ },
+ {
+   "name": "Rラピッドブラスターエリート",
+   "img": "images/RapidBlasterPro.png",
+   "tag": "normal"
+ },
+ {
+   "name": "S-BLAST92",
+   "img": "images/S-BLAST92.png",
+   "tag": "normal"
+ },
+ {
+   "name": "バケットスロッシャー",
+   "img": "images/Slosher.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ヒッセン",
+   "img": "images/Tri-Slosher.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スクリュースロッシャー",
+   "img": "images/SloshingMachine.png",
+   "tag": "normal"
+ },
+ {
+   "name": "オーバースロッシャー",
+   "img": "images/Bloblobber.png",
+   "tag": "normal"
+ },
+ {
+   "name": "エクスプロッシャー",
+   "img": "images/Explosher.png",
+   "tag": "normal"
+ },
+ {
+   "name": "モップリン",
+   "img": "images/DreadWringer.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スプラスピナー",
+   "img": "images/MiniSplatling.png",
+   "tag": "normal"
+ },
+ {
+   "name": "バレルスピナー",
+   "img": "images/HeavySplatling.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ハイドラント",
+   "img": "images/HydraSplatling.png",
+   "tag": "normal"
+ },
+ {
+   "name": "クーゲルシュライバー",
+   "img": "images/BallpointSplatling.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ノーチラス47",
+   "img": "images/Nautilus47.png",
+   "tag": "normal"
+ },
+ {
+   "name": "イグザミナー",
+   "img": "images/HeavyEditSplatling.png",
+   "tag": "normal"
+ },
+ {
+   "name": "パブロ",
+   "img": "images/Inkbrush.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ホクサイ",
+   "img": "images/Octobrush.png",
+   "tag": "normal"
+ },
+ {
+   "name": "フィンセント",
+   "img": "images/Painbrush.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スパッタリー",
+   "img": "images/DappleDualies.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スプラマニューバー",
+   "img": "images/SplatDualies.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ケルビン525",
+   "img": "images/GloogaDualies.png",
+   "tag": "normal"
+ },
+ {
+   "name": "デュアルスイーパー",
+   "img": "images/DualieSquelchers.png",
+   "tag": "normal"
+ },
+ {
+   "name": "クアッドホッパーブラック",
+   "img": "images/DarkTetraDualies.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ガエンFF",
+   "img": "images/DouserDualiesFF.png",
+   "tag": "normal"
+ },
+ {
+   "name": "パラシェルター",
+   "img": "images/SplatBrella.png",
+   "tag": "normal"
+ },
+ {
+   "name": "キャンピングシェルター",
+   "img": "images/TentaBrella.png",
+   "tag": "normal"
+ },
+ {
+   "name": "スパイガジェット",
+   "img": "images/UndercoverBrella.png",
+   "tag": "normal"
+ },
+ {
+   "name": "24式張替傘・甲",
+   "img": "images/RecycledBrella24MkI.png",
+   "tag": "normal"
+ },
+ {
+   "name": "トライストリンガー",
+   "img": "images/Tri-Stringer.png",
+   "tag": "normal"
+ },
+ {
+   "name": "LACT-450",
+   "img": "images/REEF-LUX450.png",
+   "tag": "normal"
+ },
+ {
+   "name": "フルイドV",
+   "img": "images/WellstringV.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ドライブワイパー",
+   "img": "images/SplatanaWiper.png",
+   "tag": "normal"
+ },
+ {
+   "name": "ジムワイパー",
+   "img": "images/SplatanaStamper.png",
+   "tag": "normal"
+ },
+ {
+   "name": "デンタルワイパーミント",
+   "img": "images/MintDecavitator.png",
+   "tag": "normal"
+ },
+ {
+   "name": "クマサン印のチャージャー",
+   "img": "images/GrizzcoCharger.png",
+   "tag": "kuma"
+ },
+ {
+   "name": "クマサン印のブラスター",
+   "img": "images/GrizzcoBlaster.png",
+   "tag": "kuma"
+ },
+ {
+   "name": "クマサン印のスロッシャー",
+   "img": "images/GrizzcoSlosher.png",
+   "tag": "kuma"
+ },
+ {
+   "name": "クマサン印のマニューバー",
+   "img": "images/GrizzcoDualies.png",
+   "tag": "kuma"
+ },
+ {
+   "name": "クマサン印のシェルター",
+   "img": "images/GrizzcoBrella.png",
+   "tag": "kuma"
+ },
+ {
+   "name": "クマサン印のストリンガー",
+   "img": "images/GrizzcoStringer.png",
+   "tag": "kuma"
+ },
+ {
+   "name": "クマサン印のワイパー",
+   "img": "images/GrizzcoSplatana.png",
+   "tag": "kuma"
+ },
+ {
+   "name": "クマサン印のローラー",
+   "img": "images/GrizzcoRoller.png",
+   "tag": "kuma"
+ }
+]

@@ -1,0 +1,128 @@
+:root{
+  --bg:#8a3b00;         /* 暗めのオレンジ背景 */
+  --panel:#1f1b17;      /* 盤面背景(濃色) */
+  --cell:#2a2521;       /* マス背景 */
+  --grid-gap:8px;
+  --radius:18px;
+  --shadow:0 8px 24px rgba(0,0,0,.35);
+  --text:#f6e7d7;
+  --accent:#f1a343;
+}
+
+*{ box-sizing: border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+}
+
+.container{
+  max-width: min(1100px, 92vw);
+  margin: 32px auto 64px;
+}
+
+.title-wrap{
+  display:flex; justify-content:center; align-items:center; margin-bottom:18px;
+}
+.title-image{
+  width:min(540px, 90%);
+  height:auto;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.35));
+}
+
+.board-wrap{
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: clamp(12px, 2.5vw, 24px);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+.bingo-grid{
+  display:grid;
+  gap: var(--grid-gap);
+  /* 列数はJSで変更 */
+}
+
+.cell{
+  background: var(--cell);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  display:grid;
+  place-items:center;
+  aspect-ratio:1/1;
+  overflow:hidden;
+  position:relative;
+}
+
+.cell img{
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.controls{
+  margin: 16px auto 10px;
+  display:flex;
+  gap: 12px;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+}
+
+.control-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(255,255,255,.08);
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+select{
+  appearance:none;
+  background: #342c27;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,.12);
+  padding: 8px 12px;
+  border-radius: 10px;
+  outline: none;
+}
+
+.buttons, .share{
+  display:flex;
+  gap: 14px;
+  justify-content:center;
+  align-items:center;
+  margin-top: 8px;
+}
+
+.btn{
+  height: 48px;
+  width: auto;
+  cursor: pointer;
+  user-select:none;
+  transition: transform .06s ease, filter .2s ease;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.3));
+}
+.btn:hover{ transform: translateY(-1px); }
+.btn:active{ transform: translateY(1px) scale(.99); }
+
+@media (max-width:640px){
+  .btn{ height: 44px; }
+}
+
+/* レスポンシブ：セルの最小サイズを確保 */
+.bingo-grid{
+  /* セルの最小サイズ180pxを基準。列数はJSで固定される */
+  --minCell: 84px;
+}
+.cell{
+  min-width: var(--minCell);
+  min-height: var(--minCell);
+}
