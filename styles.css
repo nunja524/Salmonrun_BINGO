@@ -1,32 +1,27 @@
 :root{
-  --bg:#e65c17;            /* 背景色 */
+  --bg:#e65c17;          /* 背景色（ご指定） */
   --panel:#1f1b17;
   --cell:#2a2521;
   --grid-gap: min(2vw, 10px);
-  /* 角丸を控えめに（全体トーンを少し角張らせる） */
-  --radius-outer:16px;     /* capture-area */
-  --radius-core:12px;      /* capture-core */
-  --radius-panel:12px;     /* board-wrap */
-  --radius-cell:10px;      /* cell */
+
+  /* 角丸を控えめに（“ちょい丸四角”） */
+  --radius-outer:16px;   /* capture-area */
+  --radius-core:12px;    /* capture-core */
+  --radius-panel:12px;   /* board-wrap */
+  --radius-cell:10px;    /* cell */
+
   --shadow:0 8px 24px rgba(0,0,0,.35);
   --text:#f6e7d7;
   --accent:#f1a343;
   --minCell: clamp(60px, 12vw, 110px);
-  --frame: var(--bg);      /* 縁取り色 */
+  --frame: var(--bg);
 
   /* ボタン色 */
-  --brand:#39964C;         /* 作成 */
-  --brand-press:#2f7f40;
-
-  --reset:#6b6b6b;         /* リセット（濃いグレー） */
-  --reset-press:#5b5b5b;
-
-  --save:#cfd6dc;          /* 画像保存（明るいグレー） */
-  --save-text:#1b1b1b;
+  --brand:#39964C;         --brand-press:#2f7f40;    /* 作成 */
+  --reset:#6b6b6b;         --reset-press:#5b5b5b;    /* リセット */
+  --save:#cfd6dc;          --save-text:#1b1b1b;      /* 保存 */
   --save-press:#bfc7cd;
-
-  --twitter:#1DA1F2;
-  --twitter-press:#1a90da;
+  --twitter:#1DA1F2;       --twitter-press:#1a90da;  /* Twitter */
 }
 
 *{ box-sizing: border-box; }
@@ -45,11 +40,11 @@ body{
   margin: 0 auto;
 }
 
-/* キャプチャ対象：枠は外側の背景色で確実に描画 */
+/* キャプチャ対象（縁取り＝背景色） */
 .capture-area{
   background: var(--frame);
   border-radius: var(--radius-outer);
-  padding: clamp(8px, 1.8vw, 16px); /* 縁取りの太さ */
+  padding: clamp(8px, 1.8vw, 16px);
 }
 .capture-core{
   background: var(--panel);
@@ -66,7 +61,7 @@ body{
 .title-image{
   width:min(560px, 92%);
   height:auto;
-  /* ロゴの白縁取り（html2canvas安定のため多重drop-shadow） */
+  /* ロゴ白縁取り（html2canvas互換の多重drop-shadow） */
   filter:
     drop-shadow( 0  0   0 #fff)
     drop-shadow( 0  1px 0 #fff)
@@ -97,10 +92,16 @@ body{
   gap: var(--grid-gap);
   width: 100%;
 }
-/* 未抽選時の高さ0回避 */
-.bingo-grid::after{ content:""; display:block; }
 
-/* セル（aspect-ratioを使わず、::beforeで正方形を作る） */
+/* 6列以上は詰め配置（dense）でオーバーフロー抑制 */
+.bingo-grid.dense{ --grid-gap: 6px; }
+.bingo-grid.dense .cell{ min-width: 0; }
+
+/* さらに狭い画面ではgapも圧縮 */
+@media (max-width:480px){ .bingo-grid.dense{ --grid-gap: 4px; } }
+@media (max-width:360px){ .bingo-grid.dense{ --grid-gap: 3px; } }
+
+/* セル（正方形を::beforeで厳密維持） */
 .cell{
   background: var(--cell);
   border-radius: var(--radius-cell);
@@ -108,33 +109,24 @@ body{
   position: relative;
   overflow: hidden;
   min-width: var(--minCell);
-  /* min-heightは削除してheight計算は::beforeに委ねる */
   touch-action: manipulation;
   box-sizing: border-box;
 }
-
-/* 正方形を担保する疑似要素（高さ=幅） */
 .cell::before{
   content:"";
   display:block;
   padding-top:100%;
 }
 
-/* 中身（画像・マーク）をセルいっぱい中央に配置 */
+/* 画像・マークをセルいっぱいに中央配置（絶対配置） */
 .cell > img,
-.cell > .mark{
-  position:absolute;
-  inset:0;
-}
+.cell > .mark{ position:absolute; inset:0; }
 
-/* 画像 */
 .cell img{
-  width:88%;
-  height:88%;
-  margin:auto;           /* 中央寄せ */
+  width:88%; height:88%;
+  margin:auto;
   object-fit:contain;
-  user-select:none;
-  pointer-events:none;
+  user-select:none; pointer-events:none;
 }
 
 /* ライン */
@@ -158,11 +150,13 @@ body{
   display:flex; align-items:center; gap:8px;
   background: rgba(0,0,0,.25);
   border: 1px solid rgba(255,255,255,.08);
-  padding: 8px 12px; border-radius: 10px; /* 角丸を控えめに */
+  padding: 8px 12px;
+  border-radius: 10px;
 }
 select{
   appearance:none; background:#342c27; color:var(--text);
-  border:1px solid rgba(255,255,255,.12); padding:10px 12px; border-radius:10px; outline:none; font-size:16px;
+  border:1px solid rgba(255,255,255,.12);
+  padding:10px 12px; border-radius:10px; outline:none; font-size:16px;
 }
 
 /* ボタン群 */
@@ -175,7 +169,7 @@ select{
   --padX: 18px; --padY: 12px;
   display:inline-flex; align-items:center; gap:8px;
   padding: var(--padY) var(--padX);
-  border-radius: 12px;                     /* ← pillsから角丸矩形へ */
+  border-radius: 12px;
   border: 2px solid transparent;
   font-weight: 700; font-size: 16px; letter-spacing: .02em;
   cursor: pointer; user-select:none; -webkit-user-drag:none;
@@ -187,19 +181,16 @@ select{
 .btn:active{ transform: translateY(1px) scale(.99); }
 .btn:focus-visible{ outline: 3px solid rgba(255,255,255,.4); outline-offset: 2px; }
 
-/* 作成：#39964C */
+/* 各色 */
 .btn--primary{ background: var(--brand); }
 .btn--primary:hover{ background: var(--brand-press); }
 
-/* リセット：濃いグレー */
 .btn--reset{ background: var(--reset); }
 .btn--reset:hover{ background: var(--reset-press); }
 
-/* 保存：明るいグレー（可読性のため文字色はダーク） */
 .btn--save{ background: var(--save); color: var(--save-text); }
 .btn--save:hover{ background: var(--save-press); }
 
-/* Twitter：青い鳥カラー */
 .btn--twitter{ background: var(--twitter); color:#fff; }
 .btn--twitter:hover{ background: var(--twitter-press); }
 .btn .icon{ width:20px; height:20px; display:block; }

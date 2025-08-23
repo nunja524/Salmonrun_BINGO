@@ -62,6 +62,15 @@ const pickWeapons = (pool, count, allowDuplicates=false) => {
   return out;
 };
 
+// ========= グリッド密度制御（6列以上でdense） =========
+function applyGridTightness(size){
+  if (size >= 6){
+    bingoEl.classList.add("dense");
+  }else{
+    bingoEl.classList.remove("dense");
+  }
+}
+
 // ========= マーク関連 =========
 function randomJitter(enabled) {
   if (!enabled) return { tx: 0, ty: 0, rot: 0 };
@@ -119,8 +128,8 @@ function toggleCell(cell, idx) {
 function renderEmptyGrid(size){
   bingoEl.innerHTML = "";
   lineLayer.innerHTML = "";
-  // スマホ溢れ防止
   bingoEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+  applyGridTightness(size);
 
   const total = size * size;
   if (!state.board || state.board.length !== total){
@@ -147,8 +156,8 @@ function renderEmptyGrid(size){
 function renderBingo(size){
   bingoEl.innerHTML = "";
   lineLayer.innerHTML = "";
-  // スマホ溢れ防止
   bingoEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+  applyGridTightness(size);
 
   const total = size * size;
   for (let i = 0; i < total; i++){
@@ -229,7 +238,7 @@ function clearLines(){
 function drawLine(p1, p2){
   const line = document.createElementNS("http://www.w3.org/2000/svg","line");
   line.setAttribute("x1", p1.x);
-  line.setAttribute("y1", p1.y);
+  line.setAttribute("y1", p2 ? p1.y : p1.y); // safety
   line.setAttribute("x2", p2.x);
   line.setAttribute("y2", p2.y);
   line.setAttribute("class","line");
@@ -271,8 +280,7 @@ function updateLines(){
 
 // ========= 画像書き出し =========
 function getCaptureElement(){
-  // ★ タイトル＋盤面をまとめた要素をキャプチャする
-  return document.getElementById("captureArea");
+  return document.getElementById("captureArea"); // ロゴ＋盤面＋縁取り
 }
 function buildFilename(){
   const size = state.size;
@@ -405,7 +413,6 @@ function generateBingo(){
 }
 
 function resetBoard(){
-  // 画像を消し、空グリッドへ（選択状態もクリア）
   const size = state.size;
   state.board = Array.from({length: size*size}, () => ({ weapon: null, selected: false }));
   renderEmptyGrid(size);
@@ -445,7 +452,7 @@ kumaSelect.addEventListener("change", () => {
 markerStyleSelect.addEventListener("change", () => {
   state.markerStyle = markerStyleSelect.value;
   // 既存マークを描き直す（見た目が変わるため）
-  const cells = getCells();
+  const cells = Array.from(document.querySelectorAll(".cell"));
   cells.forEach((cell, i) => {
     if (state.board[i].selected){
       setCellSelected(cell, true);
@@ -456,7 +463,7 @@ markerStyleSelect.addEventListener("change", () => {
 jitterToggle.addEventListener("change", () => {
   state.jitter = !!jitterToggle.checked;
   // 既存マークを描き直してズレを再適用
-  const cells = getCells();
+  const cells = Array.from(document.querySelectorAll(".cell"));
   cells.forEach((cell, i) => {
     if (state.board[i].selected){
       setCellSelected(cell, true);
@@ -486,7 +493,7 @@ window.addEventListener("resize", () => {
     }));
   }catch(err){
     console.error(err);
-    alert("武器データの読み込みに失敗しました。GitHub Pages等のHTTP環境で開いているか、JSONパスをご確認ください。");
+    alert("武器データの読み込みに失敗しました。HTTP環境（例: GitHub Pages）で開いているか、JSONパスをご確認ください。");
   }
 
   // 保存済み状態があれば復元
