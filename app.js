@@ -80,10 +80,10 @@ function createMark(style, jitterEnabled) {
 
   if (style === "golden_roe") {
     wrap.classList.add("mark--img");
-    inner.style.backgroundImage = "url('images/markers/fish.png')";
+    inner.style.backgroundImage = "url('images/markers/golden_roe.png')";
   } else if (style === "stamp") {
     wrap.classList.add("mark--img");
-    inner.style.backgroundImage = "url('images/markers/uhanko.png')";
+    inner.style.backgroundImage = "url('images/markers/stamp.png')";
   } else {
     wrap.classList.add("mark--circle");
   }
