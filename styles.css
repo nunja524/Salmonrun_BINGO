@@ -2,11 +2,12 @@
   --bg:#8a3b00;         /* 暗めのオレンジ背景 */
   --panel:#1f1b17;
   --cell:#2a2521;
-  --grid-gap:8px;
+  --grid-gap: min(2vw, 10px);
   --radius:18px;
   --shadow:0 8px 24px rgba(0,0,0,.35);
   --text:#f6e7d7;
   --accent:#f1a343;
+  --minCell: clamp(60px, 12vw, 110px); /* スマホ〜PCでタッチしやすく */
 }
 
 *{ box-sizing: border-box; }
@@ -16,18 +17,20 @@ body{
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .container{
-  max-width: min(1100px, 92vw);
-  margin: 32px auto 64px;
+  max-width: min(1100px, 94vw);
+  padding: 16px max(3vw, 12px) 64px;
+  margin: 0 auto;
 }
 
 .title-wrap{
-  display:flex; justify-content:center; align-items:center; margin-bottom:18px;
+  display:flex; justify-content:center; align-items:center; margin-bottom:12px;
 }
 .title-image{
-  width:min(540px, 90%);
+  width:min(560px, 92%);
   height:auto;
   filter: drop-shadow(0 4px 12px rgba(0,0,0,.35));
 }
@@ -35,9 +38,10 @@ body{
 .board-wrap{
   background: var(--panel);
   border-radius: var(--radius);
-  padding: clamp(12px, 2.5vw, 24px);
+  padding: clamp(10px, 2.5vw, 22px);
   box-shadow: var(--shadow);
   border: 1px solid rgba(255,255,255,.06);
+  touch-action: manipulation;
 }
 
 /* 盤面のレイヤ（グリッド + ラインSVGを重ねる） */
@@ -49,10 +53,9 @@ body{
 .bingo-grid{
   display:grid;
   gap: var(--grid-gap);
-  --minCell: 84px;          /* セルの最小サイズ（スマホ対策） */
 }
 
-/* 「何も抽選していない状態」でも高さ0にならないように */
+/* 「何も抽選していない状態」でも高さ0にならないようにダミーブロック */
 .bingo-grid::after{
   content: "";
   display: block;
@@ -70,6 +73,7 @@ body{
   position:relative;
   min-width: var(--minCell);
   min-height: var(--minCell);
+  touch-action: manipulation;
 }
 
 .cell img{
@@ -93,15 +97,16 @@ body{
 /* ラインの見た目 */
 .line{
   stroke: var(--accent);
-  stroke-width: 8;
+  stroke-width: clamp(5px, 1.2vw, 8px);
   stroke-linecap: round;
   filter: drop-shadow(0 3px 4px rgba(0,0,0,.45));
 }
 
 .controls{
-  margin: 16px auto 10px;
+  margin: 14px auto 10px;
   display:flex;
-  gap: 12px;
+  gap: 10px;
+  row-gap: 10px;
   flex-wrap:wrap;
   align-items:center;
   justify-content:center;
@@ -122,32 +127,35 @@ select{
   background: #342c27;
   color: var(--text);
   border: 1px solid rgba(255,255,255,.12);
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: 10px;
   outline: none;
+  font-size: 16px;
 }
 
 .buttons, .share{
   display:flex;
-  gap: 14px;
+  gap: 12px;
   justify-content:center;
   align-items:center;
-  margin-top: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
 }
 
 .btn{
-  height: 48px;
+  height: 52px;
   width: auto;
   cursor: pointer;
   user-select:none;
   transition: transform .06s ease, filter .2s ease;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,.3));
+  -webkit-user-drag: none;
 }
 .btn:hover{ transform: translateY(-1px); }
 .btn:active{ transform: translateY(1px) scale(.99); }
 
 @media (max-width:640px){
-  .btn{ height: 44px; }
+  .btn{ height: 48px; }
 }
 
 /* ===== マーク表示 ===== */
@@ -166,7 +174,7 @@ select{
 .mark--circle .mark-inner{
   width: 72%;
   height: 72%;
-  border: 6px solid var(--accent);
+  border: clamp(4px, 0.9vw, 6px) solid var(--accent);
   border-radius: 50%;
   box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
   background: transparent;

@@ -2,9 +2,10 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>サモラン ビンゴ</title>
   <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#8a3b00">
 </head>
 <body>
   <main class="container">
@@ -14,7 +15,7 @@
     </div>
 
     <!-- 盤面（グリッド + ライン用SVGを重ねる） -->
-    <section class="board-wrap">
+    <section class="board-wrap" id="boardWrap">
       <div class="board-layer">
         <div id="bingo" class="bingo-grid"><!-- JSでセル生成 --></div>
         <svg id="lineLayer" class="line-layer" aria-hidden="true"></svg>
@@ -43,7 +44,6 @@
         </select>
       </label>
 
-      <!-- 既存：マーク設定 -->
       <label class="control-item">
         マーク
         <select id="markerStyle" aria-label="マークの種類">
@@ -57,7 +57,6 @@
         <input type="checkbox" id="jitterToggle" aria-label="手書き風ズレを有効化">
       </label>
 
-      <!-- 追加：ライン表示のON/OFF -->
       <label class="control-item">
         ライン表示
         <input type="checkbox" id="lineToggle" checked>
@@ -68,6 +67,7 @@
     <section class="buttons">
       <img src="images/btn-generate.png" alt="ビンゴカード作成" class="btn" id="btnGenerate" />
       <img src="images/btn-reset.png" alt="リセット" class="btn" id="btnReset" />
+      <img src="images/btn-save.png" alt="画像として保存" class="btn" id="btnSave" />
     </section>
 
     <section class="share">
@@ -75,6 +75,8 @@
     </section>
   </main>
 
+  <!-- 画像書き出し用（同一オリジン推奨） -->
+  <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

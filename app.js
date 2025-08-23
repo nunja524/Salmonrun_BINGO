@@ -1,7 +1,8 @@
-// ---- 設定 ----
+// ========= 設定 =========
 const JSON_PATH = "weapons.json";
+const STORAGE_KEY = "salmon_bingo_v1";
 
-// DOM取得
+// ========= DOM取得 =========
 const bingoEl      = document.getElementById("bingo");
 const lineLayer    = document.getElementById("lineLayer");
 const sizeSelect   = document.getElementById("sizeSelect");
@@ -12,12 +13,23 @@ const lineToggle   = document.getElementById("lineToggle");
 const btnGenerate  = document.getElementById("btnGenerate");
 const btnReset     = document.getElementById("btnReset");
 const btnTwitter   = document.getElementById("btnTwitter");
+const btnSave      = document.getElementById("btnSave");
 
-// 状態
+// ========= 状態 =========
 let ALL_WEAPONS = [];  // JSON読込後に格納
 let currentGridSize = parseInt(sizeSelect.value, 10);
 
-// ユーティリティ
+// 保存対象の状態（boardは size*size の配列、各要素 { weapon?:{name,img,tag}|null, selected:boolean }）
+let state = {
+  size: currentGridSize,
+  kumaMode: kumaSelect.value,         // exclude | include | kuma_only
+  markerStyle: markerStyleSelect.value, // circle | fish
+  jitter: !!jitterToggle.checked,
+  showLines: !!lineToggle.checked,
+  board: [],                          // 後で初期化
+};
+
+// ========= ユーティリティ =========
 const shuffle = (arr) => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -50,7 +62,7 @@ const pickWeapons = (pool, count, allowDuplicates=false) => {
   return out;
 };
 
-// ===== マーク関連 =====
+// ========= マーク関連 =========
 function randomJitter(enabled) {
   if (!enabled) return { tx: 0, ty: 0, rot: 0 };
   const tx = (Math.random() * 10 - 5);
@@ -80,25 +92,59 @@ function createMark(style, jitterEnabled) {
   return wrap;
 }
 
-function toggleCell(cell) {
-  const selected = cell.dataset.selected === "true";
-  if (selected) {
-    cell.dataset.selected = "false";
-    const mark = cell.querySelector(".mark");
-    if (mark) mark.remove();
-  } else {
-    cell.dataset.selected = "true";
-    const style = markerStyleSelect.value;      // circle | fish
-    const jitterEnabled = jitterToggle.checked; // true | false
-    const mark = createMark(style, jitterEnabled);
+function setCellSelected(cell, selected){
+  cell.dataset.selected = selected ? "true" : "false";
+  const prev = cell.querySelector(".mark");
+  if (prev) prev.remove();
+  if (selected){
+    const mark = createMark(state.markerStyle, state.jitter);
     cell.appendChild(mark);
   }
-  // セルの状態が変わったらライン更新
+}
+
+function toggleCell(cell, idx) {
+  const selected = cell.dataset.selected === "true";
+  setCellSelected(cell, !selected);
+
+  // 状態更新
+  state.board[idx].selected = !selected;
+  scheduleSave();
   updateLines();
 }
 
-// ===== 盤面レンダリング =====
+// ========= 盤面レンダリング =========
 function renderEmptyGrid(size){
+  bingoEl.innerHTML = "";
+  lineLayer.innerHTML = "";
+  bingoEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+  const total = size * size;
+  // state.boardがサイズ合わない場合は初期化
+  if (!state.board || state.board.length !== total){
+    state.board = Array.from({length: total}, () => ({ weapon: null, selected: false }));
+  }
+
+  for (let i = 0; i < total; i++){
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.dataset.selected = state.board[i].selected ? "true" : "false";
+
+    // 空セルでもON/OFFできる
+    cell.addEventListener("click", () => toggleCell(cell, i));
+
+    // （武器が無いので画像なし）→ マークだけ復元
+    if (state.board[i].selected){
+      const mark = createMark(state.markerStyle, state.jitter);
+      cell.appendChild(mark);
+    }
+
+    bingoEl.appendChild(cell);
+  }
+
+  updateLines();
+}
+
+function renderBingo(size){
   bingoEl.innerHTML = "";
   lineLayer.innerHTML = "";
   bingoEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
@@ -107,80 +153,64 @@ function renderEmptyGrid(size){
   for (let i = 0; i < total; i++){
     const cell = document.createElement("div");
     cell.className = "cell";
-    cell.dataset.selected = "false";
-    // 画像なしの空セルでもON/OFFできるように
-    cell.addEventListener("click", () => toggleCell(cell));
+    cell.dataset.selected = state.board[i].selected ? "true" : "false";
+
+    const w = state.board[i].weapon;
+    if (w && w.img){
+      const img = document.createElement("img");
+      img.crossOrigin = "anonymous";   // 画像出力用
+      img.src = w.img;
+      img.alt = w.name ?? "";
+      img.title = w.name ?? "";
+      cell.appendChild(img);
+    }
+
+    if (state.board[i].selected){
+      const mark = createMark(state.markerStyle, state.jitter);
+      cell.appendChild(mark);
+    }
+
+    cell.addEventListener("click", () => toggleCell(cell, i));
     bingoEl.appendChild(cell);
   }
-  // サイズ変更時もラインをクリア
-  updateLines();
-}
-
-function renderBingo(size, weapons) {
-  bingoEl.innerHTML = "";
-  lineLayer.innerHTML = "";
-  bingoEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-
-  weapons.forEach(w => {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    cell.dataset.selected = "false";
-
-    const img = document.createElement("img");
-    img.src = w.img;
-    img.alt = w.name;
-    img.title = w.name;
-
-    cell.appendChild(img);
-    cell.addEventListener("click", () => toggleCell(cell));
-    bingoEl.appendChild(cell);
-  });
 
   updateLines();
 }
 
-// ===== ライン成立判定 & 描画 =====
+// ========= ライン判定 & 描画 =========
 function getCells(){
   return Array.from(bingoEl.querySelectorAll(".cell"));
 }
-
 function isRowComplete(size, rowIdx){
-  const cells = getCells();
   for (let c = 0; c < size; c++){
     const idx = rowIdx * size + c;
-    if (cells[idx]?.dataset.selected !== "true") return false;
+    if (!state.board[idx].selected) return false;
   }
   return true;
 }
-
 function isColComplete(size, colIdx){
-  const cells = getCells();
   for (let r = 0; r < size; r++){
     const idx = r * size + colIdx;
-    if (cells[idx]?.dataset.selected !== "true") return false;
+    if (!state.board[idx].selected) return false;
   }
   return true;
 }
-
 function isDiagMainComplete(size){
-  const cells = getCells();
   for (let i = 0; i < size; i++){
     const idx = i * size + i;
-    if (cells[idx]?.dataset.selected !== "true") return false;
+    if (!state.board[idx].selected) return false;
   }
   return true;
 }
-
 function isDiagAntiComplete(size){
-  const cells = getCells();
   for (let i = 0; i < size; i++){
     const idx = i * size + (size - 1 - i);
-    if (cells[idx]?.dataset.selected !== "true") return false;
+    if (!state.board[idx].selected) return false;
   }
   return true;
 }
 
-// セル中心座標（SVG内座標）を取得
+// セル中心座標（SVG内座標）
 function cellCenter(idx){
   const cells = getCells();
   const cell = cells[idx];
@@ -207,10 +237,11 @@ function drawLine(p1, p2){
 
 function updateLines(){
   clearLines();
-  if (!lineToggle.checked) return;          // 表示OFF
-  const size = currentGridSize;
+  if (!state.showLines) return;
+
+  const size = state.size;
   const total = size * size;
-  if (getCells().length !== total) return;  // まだ盤面未生成
+  if (!state.board || state.board.length !== total) return;
 
   // 行
   for (let r = 0; r < size; r++){
@@ -237,75 +268,264 @@ function updateLines(){
   }
 }
 
-// リサイズ時も再計算（セル位置が変わるため）
+// ========= 画像書き出し =========
+function getCaptureElement(){
+  return document.getElementById("boardWrap");
+}
+function buildFilename(){
+  const size = state.size;
+  const modeLabel = state.kumaMode === "exclude" ? "no-kuma" : state.kumaMode === "include" ? "with-kuma" : "kuma-only";
+  const ts = new Date();
+  const pad = (n)=> String(n).padStart(2,"0");
+  const stamp = `${ts.getFullYear()}-${pad(ts.getMonth()+1)}-${pad(ts.getDate())}_${pad(ts.getHours())}-${pad(ts.getMinutes())}`;
+  return `salmon-bingo_${size}x${size}_${modeLabel}.png`;
+}
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+async function exportBoardAsImage(){
+  const target = getCaptureElement();
+  if (!target) throw new Error("キャプチャ対象が見つかりません。");
+  updateLines(); // 最新レイアウトに
+
+  const scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+  const canvas = await html2canvas(target, {
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: null,
+    scale
+  });
+
+  return new Promise((resolve)=>{
+    canvas.toBlob((blob)=>{
+      resolve({ blob, dataURL: canvas.toDataURL("image/png") });
+    }, "image/png", 1.0);
+  });
+}
+
+async function saveImageOnly(){
+  try{
+    const { blob } = await exportBoardAsImage();
+    downloadBlob(blob, buildFilename());
+  }catch(e){
+    console.error(e);
+    alert("画像の書き出しに失敗しました。");
+  }
+}
+
+async function shareTwitter(){
+  try{
+    const { blob } = await exportBoardAsImage();
+    downloadBlob(blob, buildFilename()); // まず保存
+    const size = state.size;
+    const modeLabel = state.kumaMode === "exclude" ? "クマ無し"
+                     : state.kumaMode === "include" ? "クマ含む"
+                     : "クマのみ";
+    const text = encodeURIComponent(`サモラン・ビンゴの結果画像！ サイズ: ${size}×${size} ／ 設定: ${modeLabel}\n#サーモンラン #スプラトゥーン`);
+    const intent = `https://twitter.com/intent/tweet?text=${text}`;
+    window.open(intent, "_blank", "noopener");
+  }catch(e){
+    console.error(e);
+    alert("画像の書き出しに失敗しました。");
+  }
+}
+
+// ========= 保存・復元 =========
+function saveState(){
+  try{
+    const json = JSON.stringify(state);
+    localStorage.setItem(STORAGE_KEY, json);
+  }catch(e){
+    console.warn("状態の保存に失敗しました:", e);
+  }
+}
+let saveTimer = null;
+function scheduleSave(){
+  if (saveTimer) cancelAnimationFrame(saveTimer);
+  saveTimer = requestAnimationFrame(saveState);
+}
+
+function loadState(){
+  try{
+    const json = localStorage.getItem(STORAGE_KEY);
+    if (!json) return null;
+    const obj = JSON.parse(json);
+    return obj;
+  }catch(e){
+    console.warn("状態の読み込みに失敗しました:", e);
+    return null;
+  }
+}
+
+function applyStateToUI(){
+  sizeSelect.value = String(state.size);
+  kumaSelect.value = state.kumaMode;
+  markerStyleSelect.value = state.markerStyle;
+  jitterToggle.checked = !!state.jitter;
+  lineToggle.checked = !!state.showLines;
+}
+
+function buildBoardFromWeapons(weaponsArr){
+  // weaponsArr: size*size の配列（weaponオブジェクト or null）
+  const total = state.size * state.size;
+  state.board = Array.from({length: total}, (_, i) => ({
+    weapon: weaponsArr[i] ?? null,
+    selected: false
+  }));
+}
+
+// ========= 生成/リセット =========
+function generateBingo(){
+  const size = parseInt(sizeSelect.value, 10);
+  const mode = kumaSelect.value;
+  const total = size * size;
+
+  // UI値→state
+  state.size = size;
+  state.kumaMode = mode;
+
+  // プールから武器抽選
+  const pool = filterByKumaMode(ALL_WEAPONS, mode);
+  const allowDup = (mode === "kuma_only");
+  const selectedWeapons = pickWeapons(pool, total, allowDup);
+
+  // 盤面に配置（選択状態はリセット）
+  state.board = selectedWeapons.map(w => ({
+    weapon: { name: w.name || "", img: w.img || "", tag: normTag(w.tag) },
+    selected: false
+  }));
+
+  renderBingo(size);
+  scheduleSave();
+}
+
+function resetBoard(){
+  // 画像を消し、空グリッドへ（選択状態もクリア）
+  const size = state.size;
+  state.board = Array.from({length: size*size}, () => ({ weapon: null, selected: false }));
+  renderEmptyGrid(size);
+  scheduleSave();
+}
+
+// ========= イベント =========
+btnGenerate.addEventListener("click", generateBingo);
+btnReset.addEventListener("click", resetBoard);
+btnSave.addEventListener("click", saveImageOnly);
+btnTwitter.addEventListener("click", shareTwitter);
+
+// ライン表示切替
+lineToggle.addEventListener("change", () => {
+  state.showLines = !!lineToggle.checked;
+  updateLines();
+  scheduleSave();
+});
+
+// サイズ変更：未抽選でも即空盤面リサイズ
+sizeSelect.addEventListener("change", () => {
+  const newSize = parseInt(sizeSelect.value, 10);
+  state.size = newSize;
+  currentGridSize = newSize;
+
+  // boardを新サイズに合わせて作り直し（武器は消す）
+  state.board = Array.from({length: newSize*newSize}, () => ({ weapon: null, selected: false }));
+  renderEmptyGrid(newSize);
+  scheduleSave();
+});
+
+// クマ設定／マーク設定／手書き風ズレ
+kumaSelect.addEventListener("change", () => {
+  state.kumaMode = kumaSelect.value;
+  scheduleSave();
+});
+markerStyleSelect.addEventListener("change", () => {
+  state.markerStyle = markerStyleSelect.value;
+  // 既存マークを描き直す（見た目が変わるため）
+  const cells = getCells();
+  cells.forEach((cell, i) => {
+    if (state.board[i].selected){
+      setCellSelected(cell, true);
+    }
+  });
+  scheduleSave();
+});
+jitterToggle.addEventListener("change", () => {
+  state.jitter = !!jitterToggle.checked;
+  // 既存マークを描き直してズレを再適用
+  const cells = getCells();
+  cells.forEach((cell, i) => {
+    if (state.board[i].selected){
+      setCellSelected(cell, true);
+    }
+  });
+  scheduleSave();
+});
+
+// リサイズでライン再計算（レスポンシブ）
 let resizeTimer = null;
 window.addEventListener("resize", () => {
   if (resizeTimer) cancelAnimationFrame(resizeTimer);
   resizeTimer = requestAnimationFrame(updateLines);
 });
 
-// ===== 生成/リセット/共有 =====
-function generateBingo(){
-  const size = parseInt(sizeSelect.value, 10);
-  currentGridSize = size;
-  const mode = kumaSelect.value; // exclude | include | kuma_only
-  const total = size * size;
-
-  const pool = filterByKumaMode(ALL_WEAPONS, mode);
-  const allowDup = (mode === "kuma_only");
-  const selected = pickWeapons(pool, total, allowDup);
-  renderBingo(size, selected);
-}
-
-function resetBoard(){
-  // 画像は消し、空グリッドへ
-  renderEmptyGrid(currentGridSize);
-}
-
-function shareTwitter(){
-  const size = parseInt(sizeSelect.value, 10);
-  const mode = kumaSelect.value;
-  const modeLabel = mode === "exclude" ? "クマ無し"
-                   : mode === "include" ? "クマ含む"
-                   : "クマのみ";
-  const text = encodeURIComponent(`サモラン・ビンゴを作成！ サイズ: ${size}×${size} ／ 設定: ${modeLabel}`);
-  const url  = ""; // 公開URLがあれば設定
-  const via  = ""; // アカウントがあれば設定
-  const intent = `https://twitter.com/intent/tweet?text=${text}${url ? `&url=${encodeURIComponent(url)}` : ""}${via ? `&via=${encodeURIComponent(via)}` : ""}`;
-  window.open(intent, "_blank", "noopener");
-}
-
-// イベント
-btnGenerate.addEventListener("click", generateBingo);
-btnReset.addEventListener("click", resetBoard);
-btnTwitter.addEventListener("click", shareTwitter);
-
-// ライン表示ON/OFF
-lineToggle.addEventListener("change", updateLines);
-
-// サイズ変更時：即空グリッドを再構築（未抽選でもマス表示）
-sizeSelect.addEventListener("change", () => {
-  currentGridSize = parseInt(sizeSelect.value, 10);
-  renderEmptyGrid(currentGridSize);
-});
-
-// 初期は「未抽選だがマスは出ている」状態
-renderEmptyGrid(currentGridSize);
-
-// JSON読み込み
-fetch(JSON_PATH)
-  .then(res => {
+// ========= 起動処理 =========
+(async function init(){
+  // JSON読み込み
+  try{
+    const res = await fetch(JSON_PATH);
     if (!res.ok) throw new Error(`JSON読み込み失敗: ${res.status}`);
-    return res.json();
-  })
-  .then(data => {
+    const data = await res.json();
     ALL_WEAPONS = (Array.isArray(data) ? data : []).map(w => ({
       name: w.name || "",
       img:  w.img  || "",
       tag:  normTag(w.tag)
     }));
-  })
-  .catch(err => {
+  }catch(err){
     console.error(err);
     alert("武器データの読み込みに失敗しました。GitHub Pages等のHTTP環境で開いているか、JSONパスをご確認ください。");
-  });
+  }
+
+  // 保存済み状態があれば復元
+  const loaded = loadState();
+  if (loaded && loaded.size){
+    // 互換性確保しつつマージ
+    state.size        = parseInt(loaded.size, 10) || state.size;
+    state.kumaMode    = loaded.kumaMode ?? state.kumaMode;
+    state.markerStyle = loaded.markerStyle ?? state.markerStyle;
+    state.jitter      = !!loaded.jitter;
+    state.showLines   = loaded.showLines !== false;
+
+    const total = state.size * state.size;
+    if (Array.isArray(loaded.board) && loaded.board.length === total){
+      state.board = loaded.board.map(cell => ({
+        weapon: cell.weapon ? { name: cell.weapon.name||"", img: cell.weapon.img||"", tag: normTag(cell.weapon.tag) } : null,
+        selected: !!cell.selected
+      }));
+    }else{
+      state.board = Array.from({length: total}, () => ({ weapon: null, selected: false }));
+    }
+
+    applyStateToUI();
+
+    // 盤面に武器があれば画像付きで、なければ空グリッドを描画
+    const hasAnyWeapon = state.board.some(c => !!c.weapon);
+    if (hasAnyWeapon){
+      renderBingo(state.size);
+    }else{
+      renderEmptyGrid(state.size);
+    }
+  }else{
+    // 初期状態：空グリッド
+    state.size = currentGridSize;
+    state.board = Array.from({length: state.size*state.size}, () => ({ weapon: null, selected: false }));
+    applyStateToUI();
+    renderEmptyGrid(state.size);
+    scheduleSave();
+  }
+})();
