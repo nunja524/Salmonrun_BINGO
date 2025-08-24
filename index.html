@@ -92,6 +92,14 @@
       <button class="btn btn--reset" id="btnReset" type="button">マークを全てリセット</button>
       <button class="btn btn--save" id="btnSave" type="button">画像として保存</button>
     </section>
+<!-- 共有用URL -->
+<section class="sharebox" aria-live="polite">
+  <label for="shareUrl" class="sharebox__label">このカードを共有：</label>
+  <div class="sharebox__row">
+    <input id="shareUrl" class="sharebox__input" type="text" readonly value="" aria-label="共有用URL" />
+    <button id="copyUrlBtn" class="btn btn--save" type="button" title="URLをコピー">コピー</button>
+  </div>
+</section>
 
 <section class="share">
   <a href="https://x.com/Shark_raideu" target="_blank" rel="noopener" class="contact-link">

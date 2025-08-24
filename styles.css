@@ -315,3 +315,34 @@ select{
 .contact-link:active {
   transform: translateY(1px) scale(.99);
 }
+/* 共有URLボックス */
+.sharebox{
+  max-width: 900px;
+  margin: 14px auto 0;
+  padding: 8px 0;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+.sharebox__label{
+  font-weight: 700;
+  opacity: .9;
+}
+.sharebox__row{
+  width: 100%;
+  max-width: 720px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+.sharebox__input{
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: #342c27;
+  color: var(--text);
+  font-size: 15px;
+  letter-spacing: .01em;
+}

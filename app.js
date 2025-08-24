@@ -19,6 +19,10 @@ const btnGenerate  = document.getElementById("btnGenerate");
 const btnReset     = document.getElementById("btnReset");
 const btnSave      = document.getElementById("btnSave");
 
+// 共有URL
+const shareUrlInput = document.getElementById("shareUrl");
+const copyUrlBtn    = document.getElementById("copyUrlBtn");
+
 const captureArea  = document.getElementById("captureArea");
 const boardWrap    = document.getElementById("boardWrap");
 const titleWrap    = document.querySelector(".title-wrap");
@@ -27,21 +31,54 @@ const titleWrap    = document.querySelector(".title-wrap");
 let ALL_WEAPONS = [];  // JSON読み込み後に格納
 let currentGridSize = parseInt(sizeSelect.value, 10);
 
+// URLパラメータ
+const urlParams = new URLSearchParams(location.search);
+const urlSeed   = urlParams.get("seed") || "";          // 文字列
+const urlSize   = parseInt(urlParams.get("size")||"",10);
+const urlMode   = urlParams.get("mode");                // exclude/include/kuma_only
+const urlFree   = urlParams.get("free");                // "0"/"1"
+
+// 乱数（シード）
+let currentSeed = urlSeed || ""; // 空なら未固定
+
 let state = {
-  size: currentGridSize,
-  kumaMode: kumaSelect.value,           // exclude | include | kuma_only
+  size: isFinite(urlSize) && urlSize >= 3 && urlSize <= 9 ? urlSize : currentGridSize,
+  kumaMode: ["exclude","include","kuma_only"].includes(urlMode) ? urlMode : kumaSelect.value,
   markerStyle: markerStyleSelect.value, // circle | golden_roe | stamp
   jitter: !!jitterToggle.checked,
   showLines: !!lineToggle.checked,
-  free: !!freeToggle.checked,           // 中央FREE（奇数のみ適用）
+  free: urlFree === "1" ? true : urlFree === "0" ? false : !!freeToggle.checked,
   board: [],                            // size*size の配列
 };
 
+// ========= シード付きPRNG =========
+function seedFromString(str){
+  // 文字列→32bit整数
+  let h = 2166136261 >>> 0;
+  for (let i=0; i<str.length; i++){
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function mulberry32(a){
+  return function(){
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ (t>>>15), t | 1);
+    t ^= t + Math.imul(t ^ (t>>>7), t | 61);
+    return ((t ^ (t>>>14)) >>> 0) / 4294967296;
+  };
+}
+function makeRng(seedStr){
+  const s = seedFromString(seedStr);
+  return mulberry32(s);
+}
+
 // ========= ユーティリティ =========
-const shuffle = (arr) => {
+const shuffleSeeded = (arr, rng) => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -59,19 +96,19 @@ const filterByKumaMode = (list, mode) => {
   return list; // include
 };
 
-// 重複あり/なしでcount個ピック
-const pickWeapons = (pool, count, allowDuplicates=false) => {
+// 重複あり/なしでcount個ピック（seed対応）
+const pickWeaponsSeeded = (pool, count, allowDuplicates, rng) => {
   if (!allowDuplicates && pool.length < count) allowDuplicates = true;
-  if (!allowDuplicates) return shuffle(pool).slice(0, count);
+  if (!allowDuplicates) return shuffleSeeded(pool, rng).slice(0, count);
   const out = [];
-  for (let i = 0; i < count; i++) out.push(pool[Math.floor(Math.random()*pool.length)]);
+  for (let i = 0; i < count; i++) out.push(pool[Math.floor(rng()*pool.length)]);
   return out;
 };
 
-// 9x9用：同じ武器を最大cap回（デフォ2回）までに抑えてcount個ピック
-function pickWeaponsCap2(pool, count, cap = 2){
+// 9x9用：同じ武器を最大cap回（デフォ2回）までに抑えてcount個ピック（seed対応）
+function pickWeaponsCap2Seeded(pool, count, cap = 2, rng){
   if (pool.length * cap >= count){
-    const shuffled = shuffle(pool);
+    const shuffled = shuffleSeeded(pool, rng);
     const result = [];
     const usedCount = new Map(); // name -> 使用回数
     let idx = 0;
@@ -84,7 +121,7 @@ function pickWeaponsCap2(pool, count, cap = 2){
     return result;
   }
   const out = [];
-  for (let i = 0; i < count; i++) out.push(pool[Math.floor(Math.random()*pool.length)]);
+  for (let i = 0; i < count; i++) out.push(pool[Math.floor(rng()*pool.length)]);
   return out;
 }
 
@@ -371,7 +408,7 @@ async function exportBoardAsImage(){
   });
 }
 
-// ========= 画像保存 / 共有 =========
+// ========= 画像保存 =========
 function buildFilename(){
   const size = state.size;
   const mode = state.kumaMode === "exclude" ? "no-kuma"
@@ -379,7 +416,6 @@ function buildFilename(){
             : "kuma-only";
   return `salmon-bingo_${size}x${size}_${mode}.png`;
 }
-
 function downloadBlob(blob, filename){
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -389,7 +425,6 @@ function downloadBlob(blob, filename){
   a.remove();
   URL.revokeObjectURL(url);
 }
-
 async function saveImageOnly(){
   try{
     const { blob } = await exportBoardAsImage();
@@ -399,7 +434,6 @@ async function saveImageOnly(){
     alert("画像の書き出しに失敗しました。");
   }
 }
-
 
 // ========= 保存・復元 =========
 function saveState(){
@@ -427,6 +461,25 @@ function applyStateToUI(){
   jitterToggle.checked    = !!state.jitter;
   lineToggle.checked      = !!state.showLines;
   freeToggle.checked      = !!state.free;
+}
+
+// ========= シェアURL作成 =========
+function buildShareUrl(){
+  const url = new URL(location.href);
+  const p = url.searchParams;
+  p.set("size", String(state.size));
+  p.set("mode", state.kumaMode);
+  p.set("free", state.free ? "1" : "0");
+  if (currentSeed) p.set("seed", currentSeed);
+  else p.delete("seed");
+  url.search = p.toString();
+  return url.toString();
+}
+function updateShareBox(){
+  const link = buildShareUrl();
+  if (shareUrlInput) shareUrlInput.value = link;
+  // アドレスバーも更新（履歴は汚さない）
+  history.replaceState(null, "", link);
 }
 
 // ========= 生成 / リセット =========
@@ -460,7 +513,8 @@ function ensureCenterIsDuplicateFor9x9(selectedWeapons){
   }
 }
 
-function generateBingo(){
+function generateWithSeed(seedStr){
+  const rng = makeRng(seedStr);
   const size = parseInt(sizeSelect.value, 10);
   const mode = kumaSelect.value;
   const total = size * size;
@@ -472,13 +526,12 @@ function generateBingo(){
 
   let selectedWeapons;
   if (size === 9 && mode !== "kuma_only"){
-    selectedWeapons = pickWeaponsCap2(pool, total, 2);
+    selectedWeapons = pickWeaponsCap2Seeded(pool, total, 2, rng);
   } else {
     const allowDup = (mode === "kuma_only") || (pool.length < total);
-    selectedWeapons = pickWeapons(pool, total, allowDup);
+    selectedWeapons = pickWeaponsSeeded(pool, total, allowDup, rng);
   }
 
-  // 9×9 + FREE ON なら中央を重複武器に
   ensureCenterIsDuplicateFor9x9(selectedWeapons);
 
   state.board = selectedWeapons.map(w => ({
@@ -490,71 +543,83 @@ function generateBingo(){
   scheduleSave();
 }
 
+function generateBingo(){
+  // シード未指定なら生成し、指定があればそれを使う
+  if (!currentSeed) {
+    // 16進の短いシード（日付＋乱数）
+    currentSeed = (Date.now().toString(36) + Math.random().toString(36).slice(2,8)).toUpperCase();
+  }
+  generateWithSeed(currentSeed);
+  updateShareBox();
+}
+
 // すべてのマークを外す（盤面・武器構成は維持）
 function resetBoardMarks(){
   if (!state.board || !state.board.length) return;
-
-  // 状態の選択フラグを全て落とす
   state.board.forEach(cell => { cell.selected = false; });
-
-  // 画面上のマーク要素を全て除去
   const cells = getCells();
-  cells.forEach(cell => setCellSelected(cell, false));
-
-  // ライン再描画＋保存
+  for (const cell of cells) {
+    cell.dataset.selected = "false";
+    const mark = cell.querySelector(".mark");
+    if (mark) mark.remove();
+  }
   updateLines();
   scheduleSave();
 }
 
 // ========= イベント =========
-btnGenerate.addEventListener("click", generateBingo);
-// 置き換え
-btnReset.addEventListener("click", (e) => {
-  e.preventDefault();   // フォーム送信防止
-  e.stopPropagation();  // 親のクリック等への伝播防止
+btnGenerate.addEventListener("click", (e)=>{
+  e.preventDefault(); e.stopPropagation();
+  generateBingo();
+});
+btnReset.addEventListener("click", (e)=>{
+  e.preventDefault(); e.stopPropagation();
   resetBoardMarks();
 });
 btnSave.addEventListener("click", saveImageOnly);
 
+copyUrlBtn?.addEventListener("click", async ()=>{
+  try{
+    await navigator.clipboard.writeText(shareUrlInput.value);
+    copyUrlBtn.textContent = "コピー済み！";
+    setTimeout(()=> copyUrlBtn.textContent = "コピー", 1200);
+  }catch{
+    // 失敗時は選択させる
+    shareUrlInput.select();
+    document.execCommand("copy");
+  }
+});
+
+// 各UI変更で共有URLを更新（シードは固定/未指定は空のまま）
 lineToggle.addEventListener("change", () => {
   state.showLines = !!lineToggle.checked;
   updateLines();
   scheduleSave();
 });
-
 freeToggle.addEventListener("change", () => {
   state.free = !!freeToggle.checked;
   scheduleSave();
-  // FREE切替で見た目を更新（データは保持）
   const hasAny = state.board.some(c => !!c.weapon);
   if (hasAny) renderBingo(state.size);
   else        renderEmptyGrid(state.size);
+  updateShareBox();
 });
-
 sizeSelect.addEventListener("change", () => {
   const newSize = parseInt(sizeSelect.value, 10);
   state.size = newSize;
-
+  // 既存カードを消さずにURLだけ更新したい場合は以下の2行は不要。
   state.board = Array.from({length: newSize*newSize}, () => ({ weapon: null, selected: false }));
   renderEmptyGrid(newSize);
   scheduleSave();
+  updateShareBox();
 });
-
 kumaSelect.addEventListener("change", () => {
   state.kumaMode = kumaSelect.value;
   scheduleSave();
+  updateShareBox();
 });
-
 markerStyleSelect.addEventListener("change", () => {
   state.markerStyle = markerStyleSelect.value;
-  document.querySelectorAll(".cell").forEach((cell, i) => {
-    if (state.board[i].selected) setCellSelected(cell, true);
-  });
-  scheduleSave();
-});
-
-jitterToggle.addEventListener("change", () => {
-  state.jitter = !!jitterToggle.checked;
   document.querySelectorAll(".cell").forEach((cell, i) => {
     if (state.board[i].selected) setCellSelected(cell, true);
   });
@@ -591,36 +656,49 @@ window.addEventListener("resize", () => {
   // 保存状態の復元
   const loaded = loadState();
   if (loaded && loaded.size){
-    state.size        = parseInt(loaded.size, 10) || state.size;
-    state.kumaMode    = loaded.kumaMode ?? state.kumaMode;
+    // URLに seed 等が来ている場合は URL 優先で上書き
+    state.size        = isFinite(urlSize) && urlSize>=3 && urlSize<=9 ? urlSize : parseInt(loaded.size,10) || state.size;
+    state.kumaMode    = urlMode ? state.kumaMode : (loaded.kumaMode ?? state.kumaMode);
     state.markerStyle = loaded.markerStyle ?? state.markerStyle;
     state.jitter      = !!loaded.jitter;
     state.showLines   = loaded.showLines !== false;
-    state.free        = !!loaded.free;
+    state.free        = (urlFree==="1"||urlFree==="0") ? (urlFree==="1") : !!loaded.free;
 
     const total = state.size * state.size;
-    if (Array.isArray(loaded.board) && loaded.board.length === total){
+    if (Array.isArray(loaded.board) && loaded.board.length === total && !urlSeed){
+      // seed が URL に無い場合のみローカルの盤面を復元
       state.board = loaded.board.map(cell => ({
         weapon: cell.weapon ? { name: cell.weapon.name||"", img: cell.weapon.img||"", tag: normTag(cell.weapon.tag) } : null,
         selected: !!cell.selected
       }));
+      applyStateToUI();
+      const hasAnyWeapon = state.board.some(c => !!c.weapon);
+      if (hasAnyWeapon) renderBingo(state.size);
+      else              renderEmptyGrid(state.size);
     }else{
-      state.board = Array.from({length: total}, () => ({ weapon: null, selected: false }));
+      applyStateToUI();
+      // URLにseedがあれば即そのカードを生成
+      if (urlSeed){
+        currentSeed = urlSeed;
+        generateWithSeed(currentSeed);
+      }else{
+        renderEmptyGrid(state.size);
+      }
     }
-
-    applyStateToUI();
-
-    const hasAnyWeapon = state.board.some(c => !!c.weapon);
-    if (hasAnyWeapon) renderBingo(state.size);
-    else              renderEmptyGrid(state.size);
   }else{
-    // 初期は空盤面
-    state.size = currentGridSize;
-    state.board = Array.from({length: state.size*state.size}, () => ({ weapon: null, selected: false }));
+    // 初期は URL が優先
     applyStateToUI();
-    renderEmptyGrid(state.size);
+    if (urlSeed){
+      currentSeed = urlSeed;
+      generateWithSeed(currentSeed);
+    }else{
+      renderEmptyGrid(state.size);
+    }
     scheduleSave();
   }
+
+  // 共有URL 初期表示
+  updateShareBox();
 
   // ロゴ白縁 初回描画
   drawTitleStrokeCanvas();
