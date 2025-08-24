@@ -490,16 +490,25 @@ function generateBingo(){
   scheduleSave();
 }
 
-function resetBoard(){
-  const size = state.size;
-  state.board = Array.from({length: size*size}, () => ({ weapon: null, selected: false }));
-  renderEmptyGrid(size);
+// すべてのマークを外す（盤面・武器構成は維持）
+function resetBoardMarks(){
+  if (!state.board || !state.board.length) return;
+
+  // 状態の選択フラグを全て落とす
+  state.board.forEach(cell => { cell.selected = false; });
+
+  // 画面上のマーク要素を全て除去
+  const cells = getCells();
+  cells.forEach(cell => setCellSelected(cell, false));
+
+  // ライン再描画＋保存
+  updateLines();
   scheduleSave();
 }
 
 // ========= イベント =========
 btnGenerate.addEventListener("click", generateBingo);
-btnReset.addEventListener("click", resetBoard);
+btnReset.addEventListener("click", resetBoardMarks);
 btnSave.addEventListener("click", saveImageOnly);
 
 lineToggle.addEventListener("change", () => {
