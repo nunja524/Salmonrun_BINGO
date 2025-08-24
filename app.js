@@ -1,6 +1,6 @@
 // ========= 設定 =========
 const JSON_PATH   = "weapons.json";
-const STORAGE_KEY = "salmon_bingo_v1";
+const BASE_STORAGE_KEY = "salmon_bingo_v1"; // ← 1カード=1キーの形式で保存します
 
 // ロゴ白縁のチューニング（必要なら調整）
 const TITLE_STROKE_THICKNESS = 2.0;  // 白縁の太さ(px)
@@ -42,6 +42,7 @@ const urlFree   = urlParams.get("free");                // "0"/"1"
 let currentSeed = urlSeed || ""; // 空なら未固定
 
 let state = {
+  seed: currentSeed, // ← どのカードか識別するため保存にも持たせる
   size: isFinite(urlSize) && urlSize >= 3 && urlSize <= 9 ? urlSize : currentGridSize,
   kumaMode: ["exclude","include","kuma_only"].includes(urlMode) ? urlMode : kumaSelect.value,
   markerStyle: markerStyleSelect.value, // circle | golden_roe | stamp
@@ -53,12 +54,8 @@ let state = {
 
 // ========= シード付きPRNG =========
 function seedFromString(str){
-  // 文字列→32bit整数
   let h = 2166136261 >>> 0;
-  for (let i=0; i<str.length; i++){
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
+  for (let i=0; i<str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
 }
 function mulberry32(a){
@@ -69,9 +66,9 @@ function mulberry32(a){
     return ((t ^ (t>>>14)) >>> 0) / 4294967296;
   };
 }
-function makeRng(seedStr){
-  const s = seedFromString(seedStr);
-  return mulberry32(s);
+function makeRng(seedStr){ return mulberry32(seedFromString(seedStr)); }
+function newSeed(){
+  return (Date.now().toString(36) + Math.random().toString(36).slice(2,8)).toUpperCase();
 }
 
 // ========= ユーティリティ =========
@@ -110,7 +107,7 @@ function pickWeaponsCap2Seeded(pool, count, cap = 2, rng){
   if (pool.length * cap >= count){
     const shuffled = shuffleSeeded(pool, rng);
     const result = [];
-    const usedCount = new Map(); // name -> 使用回数
+    const usedCount = new Map();
     let idx = 0;
     while(result.length < count){
       const w = shuffled[idx % shuffled.length];
@@ -125,13 +122,13 @@ function pickWeaponsCap2Seeded(pool, count, cap = 2, rng){
   return out;
 }
 
-// ========= グリッド密度制御（6列以上はdense） =========
+// ========= グリッド密度制御 =========
 function applyGridTightness(size){
   if (size >= 6) bingoEl.classList.add("dense");
   else           bingoEl.classList.remove("dense");
 }
 
-// ========= レイアウト微調整（7×7以上/9×9で余白やgapを詰める） =========
+// ========= レイアウト微調整 =========
 function applyLayoutTuning(size){
   const t7 = size >= 7;
   const t9 = size >= 9;
@@ -266,19 +263,12 @@ function renderBingo(size){
 
 // ========= FREEセル：見た目だけ付与（データは保持/未選択） =========
 function applyFreeCell(size){
-  // 残留防止：全セルから free を外す
   getCells().forEach(c => c.classList.remove("free"));
-
-  if (!(state.free && size % 2 === 1)) return; // 偶数 or OFF は何もしない
-
+  if (!(state.free && size % 2 === 1)) return;
   const mid = Math.floor(size / 2);
   const centerIdx = mid * size + mid;
-
-  // データは保持（weapon を消さない／selected もしない）
   const cells = getCells();
-  if (cells[centerIdx]) {
-    cells[centerIdx].classList.add("free");
-  }
+  if (cells[centerIdx]) cells[centerIdx].classList.add("free");
 }
 
 // ========= ライン判定 & 描画 =========
@@ -391,7 +381,7 @@ async function exportBoardAsImage(){
   if (!target) throw new Error("キャプチャ対象が見つかりません。");
 
   updateLines();
-  drawTitleStrokeCanvas(); // 保存直前に白縁を最新化
+  drawTitleStrokeCanvas();
 
   setCleanCaptureMode(true);
   await new Promise(r => requestAnimationFrame(r));
@@ -435,19 +425,29 @@ async function saveImageOnly(){
   }
 }
 
-// ========= 保存・復元 =========
+// ========= 保存・復元（カード毎にキーを分ける） =========
+function storageKeyFor(seed, size, mode, free){
+  const s = seed || "NOSEED";
+  return `${BASE_STORAGE_KEY}:${s}:${size}:${mode}:${free ? 1 : 0}`;
+}
+function currentStorageKey(){
+  return storageKeyFor(state.seed || currentSeed, state.size, state.kumaMode, state.free);
+}
 function saveState(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-  catch(e){ console.warn("状態の保存に失敗:", e); }
+  try{
+    const key = currentStorageKey();
+    localStorage.setItem(key, JSON.stringify(state));
+  }catch(e){ console.warn("状態の保存に失敗:", e); }
 }
 let saveTimer = null;
 function scheduleSave(){
   if (saveTimer) cancelAnimationFrame(saveTimer);
   saveTimer = requestAnimationFrame(saveState);
 }
-function loadState(){
+function loadStateBy(seed, size, mode, free){
   try{
-    const j = localStorage.getItem(STORAGE_KEY);
+    const key = storageKeyFor(seed, size, mode, free);
+    const j = localStorage.getItem(key);
     return j ? JSON.parse(j) : null;
   }catch(e){
     console.warn("状態の読み込みに失敗:", e);
@@ -470,7 +470,7 @@ function buildShareUrl(){
   p.set("size", String(state.size));
   p.set("mode", state.kumaMode);
   p.set("free", state.free ? "1" : "0");
-  if (currentSeed) p.set("seed", currentSeed);
+  if (state.seed) p.set("seed", state.seed);
   else p.delete("seed");
   url.search = p.toString();
   return url.toString();
@@ -478,7 +478,6 @@ function buildShareUrl(){
 function updateShareBox(){
   const link = buildShareUrl();
   if (shareUrlInput) shareUrlInput.value = link;
-  // アドレスバーも更新（履歴は汚さない）
   history.replaceState(null, "", link);
 }
 
@@ -490,11 +489,9 @@ function ensureCenterIsDuplicateFor9x9(selectedWeapons){
   const mid = Math.floor(size / 2);
   const centerIdx = mid * size + mid;
 
-  // 出現回数
   const counts = new Map();
   selectedWeapons.forEach(w => counts.set(w.name, (counts.get(w.name) || 0) + 1));
 
-  // 重複がある武器の位置（中央以外）を探す
   let dupIdx = -1;
   for (let i = 0; i < selectedWeapons.length; i++){
     if (i === centerIdx) continue;
@@ -503,12 +500,10 @@ function ensureCenterIsDuplicateFor9x9(selectedWeapons){
   }
 
   if (dupIdx !== -1){
-    // 交換：中央に重複武器を置く
     const temp = selectedWeapons[centerIdx];
     selectedWeapons[centerIdx] = selectedWeapons[dupIdx];
     selectedWeapons[dupIdx] = temp;
   } else if (selectedWeapons.length > 1){
-    // フォールバック：中央に index 0 を置いて重複を作る
     selectedWeapons[centerIdx] = selectedWeapons[0];
   }
 }
@@ -519,6 +514,7 @@ function generateWithSeed(seedStr){
   const mode = kumaSelect.value;
   const total = size * size;
 
+  state.seed = seedStr;     // ← このカードの識別子として保存
   state.size = size;
   state.kumaMode = mode;
 
@@ -544,11 +540,9 @@ function generateWithSeed(seedStr){
 }
 
 function generateBingo(){
-  // シード未指定なら生成し、指定があればそれを使う
-  if (!currentSeed) {
-    // 16進の短いシード（日付＋乱数）
-    currentSeed = (Date.now().toString(36) + Math.random().toString(36).slice(2,8)).toUpperCase();
-  }
+  // ★毎回、新しいシードで作り直す（何度でもランダム生成OK）
+  currentSeed = newSeed();
+  state.seed  = currentSeed;
   generateWithSeed(currentSeed);
   updateShareBox();
 }
@@ -584,13 +578,12 @@ copyUrlBtn?.addEventListener("click", async ()=>{
     copyUrlBtn.textContent = "コピー済み！";
     setTimeout(()=> copyUrlBtn.textContent = "コピー", 1200);
   }catch{
-    // 失敗時は選択させる
     shareUrlInput.select();
     document.execCommand("copy");
   }
 });
 
-// 各UI変更で共有URLを更新（シードは固定/未指定は空のまま）
+// UI変更で共有URLを更新（seedは固定/未指定は空のまま）
 lineToggle.addEventListener("change", () => {
   state.showLines = !!lineToggle.checked;
   updateLines();
@@ -607,7 +600,6 @@ freeToggle.addEventListener("change", () => {
 sizeSelect.addEventListener("change", () => {
   const newSize = parseInt(sizeSelect.value, 10);
   state.size = newSize;
-  // 既存カードを消さずにURLだけ更新したい場合は以下の2行は不要。
   state.board = Array.from({length: newSize*newSize}, () => ({ weapon: null, selected: false }));
   renderEmptyGrid(newSize);
   scheduleSave();
@@ -620,6 +612,13 @@ kumaSelect.addEventListener("change", () => {
 });
 markerStyleSelect.addEventListener("change", () => {
   state.markerStyle = markerStyleSelect.value;
+  document.querySelectorAll(".cell").forEach((cell, i) => {
+    if (state.board[i].selected) setCellSelected(cell, true);
+  });
+  scheduleSave();
+});
+jitterToggle.addEventListener("change", () => {
+  state.jitter = !!jitterToggle.checked;
   document.querySelectorAll(".cell").forEach((cell, i) => {
     if (state.board[i].selected) setCellSelected(cell, true);
   });
@@ -653,48 +652,32 @@ window.addEventListener("resize", () => {
     alert("武器データの読み込みに失敗しました。HTTP環境（例: GitHub Pages）で開いているか、JSONパスをご確認ください。");
   }
 
-  // 保存状態の復元
-  const loaded = loadState();
-  if (loaded && loaded.size){
-    // URLに seed 等が来ている場合は URL 優先で上書き
-    state.size        = isFinite(urlSize) && urlSize>=3 && urlSize<=9 ? urlSize : parseInt(loaded.size,10) || state.size;
-    state.kumaMode    = urlMode ? state.kumaMode : (loaded.kumaMode ?? state.kumaMode);
-    state.markerStyle = loaded.markerStyle ?? state.markerStyle;
-    state.jitter      = !!loaded.jitter;
-    state.showLines   = loaded.showLines !== false;
-    state.free        = (urlFree==="1"||urlFree==="0") ? (urlFree==="1") : !!loaded.free;
+  // URLが指定されている場合は、そのカード専用の保存データを探す
+  if (urlSeed){
+    state.seed = urlSeed;
+    const loaded = loadStateBy(urlSeed,
+                               state.size,
+                               state.kumaMode,
+                               state.free);
+    applyStateToUI();
 
-    const total = state.size * state.size;
-    if (Array.isArray(loaded.board) && loaded.board.length === total && !urlSeed){
-      // seed が URL に無い場合のみローカルの盤面を復元
-      state.board = loaded.board.map(cell => ({
-        weapon: cell.weapon ? { name: cell.weapon.name||"", img: cell.weapon.img||"", tag: normTag(cell.weapon.tag) } : null,
-        selected: !!cell.selected
-      }));
-      applyStateToUI();
-      const hasAnyWeapon = state.board.some(c => !!c.weapon);
-      if (hasAnyWeapon) renderBingo(state.size);
-      else              renderEmptyGrid(state.size);
+    if (loaded && Array.isArray(loaded.board) && loaded.board.length === state.size*state.size){
+      // 共有URLのカードに対するローカル保存があれば、それを優先（マークも復元）
+      state = {
+        ...state,
+        ...loaded,
+        seed: urlSeed, // 念のため固定
+      };
+      renderBingo(state.size);
     }else{
-      applyStateToUI();
-      // URLにseedがあれば即そのカードを生成
-      if (urlSeed){
-        currentSeed = urlSeed;
-        generateWithSeed(currentSeed);
-      }else{
-        renderEmptyGrid(state.size);
-      }
+      // ローカル保存が無ければ、URLシードで新規生成
+      generateWithSeed(urlSeed);
     }
   }else{
-    // 初期は URL が優先
+    // URLにseedが無い場合は、最後に遊んだカード（seed含む）を探す（直近のキーを探すのは難しいのでfallback）
+    // 既存の固定キー保存からの復元はやめ、空盤面から開始
     applyStateToUI();
-    if (urlSeed){
-      currentSeed = urlSeed;
-      generateWithSeed(currentSeed);
-    }else{
-      renderEmptyGrid(state.size);
-    }
-    scheduleSave();
+    renderEmptyGrid(state.size);
   }
 
   // 共有URL 初期表示
