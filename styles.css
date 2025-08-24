@@ -1,5 +1,5 @@
 :root{
-  --bg:#e65c17;          /* 背景色（ご指定） */
+  --bg:#e65c17;          /* 背景色 */
   --panel:#1f1b17;
   --cell:#2a2521;
   --grid-gap: min(2vw, 10px);
@@ -34,6 +34,7 @@ body{
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ご指定のコンテナ設定 */
 .container{
   max-width: min(750px, 94vw);
   padding: 16px 0 64px;
@@ -109,8 +110,6 @@ body{
   gap: var(--grid-gap);
   width: 100%;
 }
-
-/* 6列以上は詰め配置（dense）でオーバーフロー抑制 */
 .bingo-grid.dense{ --grid-gap: 6px; }
 .bingo-grid.dense .cell{ min-width: 0; }
 
@@ -144,6 +143,27 @@ body{
   object-fit:contain;
   user-select:none; pointer-events:none;
 }
+
+/* FREEセル：画像より前面に"FREE"を表示、画像は隠す。マークは更に上（z-index:2） */
+.cell.free{
+  background: rgba(255,255,255,0.10);
+  position: relative;
+}
+.cell.free::after{
+  content: "FREE";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: clamp(16px, 4vw, 28px);
+  color: var(--accent);
+  text-shadow: 1px 1px 3px rgba(0,0,0,.6);
+  z-index: 1;
+  pointer-events: none;
+}
+.cell.free > img{ visibility: hidden; }
 
 /* ライン */
 .line-layer{
@@ -219,16 +239,15 @@ select{
 .btn--twitter:hover{ background: var(--twitter-press); }
 .btn .icon{ width:20px; height:20px; display:block; }
 
-/* ================== スマホ最適化 ================== */
-/* 480px以下：ほぼフルブリードでセル最大化 */
+/* ================== スマホ最適化（ご指定を反映） ================== */
 @media (max-width:480px){
   :root{
     --grid-gap: 4px;
     --minCell: clamp(44px, 22vw, 80px);
   }
-   .container{
+  .container{
     max-width: 100vw;          /* スマホでは全幅に広げる */
-    padding: 16px 0 48px;    /* 上 右左 下 */
+    padding: 16px 0 48px;      /* 上 右左 下（背景を“ほんの少し”だけ見せる前提で左右0を指定） */
   }
   .capture-area{ padding: 4px; }
   .capture-core{ padding: 10px; }
@@ -275,21 +294,4 @@ select{
 .mark--img .mark-inner{
   width:68%; aspect-ratio:1/1; background-repeat:no-repeat; background-position:center; background-size:contain;
   image-rendering:auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
-}
-.cell.free{
-  background: rgba(255,255,255,0.1);
-  position: relative;
-}
-.cell.free::after{
-  content: "FREE";
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: clamp(16px, 4vw, 28px);
-  color: var(--accent);
-  text-shadow: 1px 1px 3px rgba(0,0,0,.6);
-  pointer-events: none;
 }

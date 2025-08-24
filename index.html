@@ -14,13 +14,13 @@
     <section id="captureArea" class="capture-area">
       <div class="capture-core">
 
-        <!-- タイトル：白縁はJSでクローンを生成 -->
-<div class="title-wrap">
-  <div id="titleStack" class="title-stack">
-    <canvas id="titleStroke" class="title-stroke-canvas" aria-hidden="true"></canvas>
-    <img src="images/title.png" alt="サモラン・ビンゴ" class="title-image" />
-  </div>
-</div>
+        <!-- タイトル：白縁はcanvas描画 -->
+        <div class="title-wrap">
+          <div id="titleStack" class="title-stack">
+            <canvas id="titleStroke" class="title-stroke-canvas" aria-hidden="true"></canvas>
+            <img src="images/title.png" alt="サモラン・ビンゴ" class="title-image" />
+          </div>
+        </div>
 
         <!-- 盤面 -->
         <section class="board-wrap" id="boardWrap">
@@ -35,51 +35,55 @@
 
     <!-- コントロール -->
     <section class="controls">
-      <label class="control-item">
-        サイズ
-<select id="sizeSelect" aria-label="ビンゴサイズ">
-  <option value="3">3 × 3</option>
-  <option value="4">4 × 4</option>
-  <option value="5" selected>5 × 5</option>
-  <option value="6">6 × 6</option>
-  <option value="7">7 × 7</option>
-  <option value="8">8 × 8</option>
-  <option value="9">9 × 9</option> <!-- 追加 -->
-</select>
-
-      </label>
-
-      <label class="control-item">
-        クマブキ
-        <select id="kumaSelect" aria-label="クマブキ設定">
-          <option value="exclude">含めない</option>
-          <option value="include" selected>含める</option>
-          <option value="kuma_only">クマのみ</option>
-        </select>
-      </label>
-
-      <label class="control-item">
-        マーク
-        <select id="markerStyle" aria-label="マークの種類">
-          <option value="circle" selected>○（丸）</option>
-          <option value="golden_roe">金イクラ</option>
-          <option value="stamp">ウルトラハンコ</option>
-        </select>
-      </label>
-<br>
-      <label class="control-item">
-        手押し風ズレ
-        <input type="checkbox" id="jitterToggle" aria-label="手書き風ズレを有効化">
-      </label>
-
-      <label class="control-item">
-        ライン表示
-        <input type="checkbox" id="lineToggle" checked>
-      </label>
+      <!-- プルダウン群 -->
+      <div class="control-row">
         <label class="control-item">
-    中央フリー枠
-    <input type="checkbox" id="freeToggle" aria-label="中央フリー枠を有効化">
-  </label>
+          サイズ
+          <select id="sizeSelect" aria-label="ビンゴサイズ">
+            <option value="3">3 × 3</option>
+            <option value="4">4 × 4</option>
+            <option value="5" selected>5 × 5</option>
+            <option value="6">6 × 6</option>
+            <option value="7">7 × 7</option>
+            <option value="8">8 × 8</option>
+            <option value="9">9 × 9</option>
+          </select>
+        </label>
+
+        <label class="control-item">
+          クマブキ
+          <select id="kumaSelect" aria-label="クマブキ設定">
+            <option value="exclude">含めない</option>
+            <option value="include" selected>含める</option>
+            <option value="kuma_only">クマのみ</option>
+          </select>
+        </label>
+
+        <label class="control-item">
+          マーク
+          <select id="markerStyle" aria-label="マークの種類">
+            <option value="circle" selected>○（丸）</option>
+            <option value="golden_roe">金イクラ</option>
+            <option value="stamp">ウルトラハンコ</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- チェックボックス群 -->
+      <div class="control-row">
+        <label class="control-item">
+          手書き風ズレ
+          <input type="checkbox" id="jitterToggle" aria-label="手書き風ズレを有効化">
+        </label>
+        <label class="control-item">
+          ライン表示
+          <input type="checkbox" id="lineToggle" checked>
+        </label>
+        <label class="control-item">
+          中央フリー枠
+          <input type="checkbox" id="freeToggle" aria-label="中央フリー枠を有効化">
+        </label>
+      </div>
     </section>
 
     <!-- ボタン群 -->

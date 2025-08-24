@@ -4,7 +4,7 @@ const STORAGE_KEY = "salmon_bingo_v1";
 
 // ロゴ白縁のチューニング（必要なら調整）
 const TITLE_STROKE_THICKNESS = 2.0;  // 白縁の太さ(px)
-const TITLE_STROKE_Y_OFFSET  = -2;    // 白縁の全体的な上下補正（上へ -1 / 下へ +1 など）
+const TITLE_STROKE_Y_OFFSET  = -2;   // 白縁の上下補正（上へ - / 下へ +）
 
 // ========= DOM取得 =========
 const bingoEl      = document.getElementById("bingo");
@@ -14,6 +14,7 @@ const kumaSelect   = document.getElementById("kumaSelect");
 const markerStyleSelect = document.getElementById("markerStyle");
 const jitterToggle = document.getElementById("jitterToggle");
 const lineToggle   = document.getElementById("lineToggle");
+const freeToggle   = document.getElementById("freeToggle");
 const btnGenerate  = document.getElementById("btnGenerate");
 const btnReset     = document.getElementById("btnReset");
 const btnTwitter   = document.getElementById("btnTwitter");
@@ -29,22 +30,13 @@ let currentGridSize = parseInt(sizeSelect.value, 10);
 
 let state = {
   size: currentGridSize,
-  kumaMode: kumaSelect.value,
-  markerStyle: markerStyleSelect.value,
+  kumaMode: kumaSelect.value,           // exclude | include | kuma_only
+  markerStyle: markerStyleSelect.value, // circle | golden_roe | stamp
   jitter: !!jitterToggle.checked,
   showLines: !!lineToggle.checked,
-  free: false,   // ★ フリー枠ON/OFF
-  board: [],
+  free: !!freeToggle.checked,           // 中央FREE（奇数のみ適用）
+  board: [],                            // size*size の配列
 };
-
-const freeToggle = document.getElementById("freeToggle");
-
-freeToggle.addEventListener("change", () => {
-  state.free = !!freeToggle.checked;
-  scheduleSave();
-  renderBingo(state.size); // 再描画
-});
-
 
 // ========= ユーティリティ =========
 const shuffle = (arr) => {
@@ -80,7 +72,6 @@ const pickWeapons = (pool, count, allowDuplicates=false) => {
 // 9x9用：同じ武器を最大cap回（デフォ2回）までに抑えてcount個ピック
 function pickWeaponsCap2(pool, count, cap = 2){
   if (pool.length * cap >= count){
-    // 種類が十分ある：cap上限を守って配る
     const shuffled = shuffle(pool);
     const result = [];
     const usedCount = new Map(); // name -> 使用回数
@@ -93,7 +84,6 @@ function pickWeaponsCap2(pool, count, cap = 2){
     }
     return result;
   }
-  // 種類が少なくcap制限を満たせないとき（例：クマのみ）→ ランダムで埋める
   const out = [];
   for (let i = 0; i < count; i++) out.push(pool[Math.floor(Math.random()*pool.length)]);
   return out;
@@ -197,18 +187,8 @@ function renderEmptyGrid(size){
     bingoEl.appendChild(cell);
   }
   updateLines();
-  drawTitleStrokeCanvas(); // レイアウト変更時は白縁も描き直す
-  // フリー枠を適用
-if (state.free && size % 2 === 1) {
-  const mid = Math.floor(size / 2);
-  const centerIdx = mid * size + mid;
-  state.board[centerIdx].weapon = null;     // 武器なし
-  state.board[centerIdx].selected = false;   // 自動で選択済み扱い
-  const cells = getCells();
-  if (cells[centerIdx]) {
-    cells[centerIdx].classList.add("free");
-  }
-}
+  drawTitleStrokeCanvas();
+  applyFreeCell(size);
 }
 
 function renderBingo(size){
@@ -228,7 +208,7 @@ function renderBingo(size){
     const w = state.board[i].weapon;
     if (w && w.img){
       const img = document.createElement("img");
-      img.crossOrigin = "anonymous";   // 画像出力用
+      img.crossOrigin = "anonymous";
       img.src = w.img;
       img.alt = w.name ?? "";
       img.title = w.name ?? "";
@@ -245,18 +225,24 @@ function renderBingo(size){
   }
   updateLines();
   drawTitleStrokeCanvas();
-  // フリー枠を適用
-if (state.free && size % 2 === 1) {
+  applyFreeCell(size);
+}
+
+// ========= FREEセル：見た目だけ付与（データは保持/未選択） =========
+function applyFreeCell(size){
+  // 残留防止：全セルから free を外す
+  getCells().forEach(c => c.classList.remove("free"));
+
+  if (!(state.free && size % 2 === 1)) return; // 偶数 or OFF は何もしない
+
   const mid = Math.floor(size / 2);
   const centerIdx = mid * size + mid;
-  state.board[centerIdx].weapon = null;     // 武器なし
-  state.board[centerIdx].selected = false;   // 自動で選択済み扱い
+
+  // データは保持（weapon を消さない／selected もしない）
   const cells = getCells();
   if (cells[centerIdx]) {
     cells[centerIdx].classList.add("free");
   }
-}
-
 }
 
 // ========= ライン判定 & 描画 =========
@@ -327,7 +313,7 @@ function drawTitleStrokeCanvas(){
   if (!stack || !img || !canvas) return;
 
   const rect = stack.getBoundingClientRect();
-  const dpr  = Math.min(window.devicePixelRatio || 1, 2); // 重くならないよう上限
+  const dpr  = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width  = Math.max(1, Math.floor(rect.width  * dpr));
   canvas.height = Math.max(1, Math.floor(rect.height * dpr));
   canvas.style.width  = rect.width + "px";
@@ -337,7 +323,7 @@ function drawTitleStrokeCanvas(){
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save(); ctx.scale(dpr, dpr);
 
-  const d = TITLE_STROKE_THICKNESS; // 太さ
+  const d = TITLE_STROKE_THICKNESS;
   const offsets = [
     {x:  d, y:  0}, {x: -d, y:  0}, {x:  0, y:  d}, {x:  0, y: -d},
     {x:  d, y:  d}, {x:  d, y: -d}, {x: -d, y:  d}, {x: -d, y: -d}
@@ -418,7 +404,7 @@ async function saveImageOnly(){
 async function shareTwitter(){
   try{
     const { blob } = await exportBoardAsImage();
-    downloadBlob(blob, buildFilename()); // まず保存
+    downloadBlob(blob, buildFilename());
     const size = state.size;
     const modeLabel = state.kumaMode === "exclude" ? "クマ無し"
                      : state.kumaMode === "include" ? "クマ含む"
@@ -457,10 +443,40 @@ function applyStateToUI(){
   markerStyleSelect.value = state.markerStyle;
   jitterToggle.checked    = !!state.jitter;
   lineToggle.checked      = !!state.showLines;
-  freeToggle.checked = !!state.free;
+  freeToggle.checked      = !!state.free;
 }
 
 // ========= 生成 / リセット =========
+function ensureCenterIsDuplicateFor9x9(selectedWeapons){
+  const size = state.size;
+  if (!(size === 9 && state.free && state.kumaMode !== "kuma_only")) return;
+
+  const mid = Math.floor(size / 2);
+  const centerIdx = mid * size + mid;
+
+  // 出現回数
+  const counts = new Map();
+  selectedWeapons.forEach(w => counts.set(w.name, (counts.get(w.name) || 0) + 1));
+
+  // 重複がある武器の位置（中央以外）を探す
+  let dupIdx = -1;
+  for (let i = 0; i < selectedWeapons.length; i++){
+    if (i === centerIdx) continue;
+    const w = selectedWeapons[i];
+    if ((counts.get(w.name) || 0) >= 2){ dupIdx = i; break; }
+  }
+
+  if (dupIdx !== -1){
+    // 交換：中央に重複武器を置く
+    const temp = selectedWeapons[centerIdx];
+    selectedWeapons[centerIdx] = selectedWeapons[dupIdx];
+    selectedWeapons[dupIdx] = temp;
+  } else if (selectedWeapons.length > 1){
+    // フォールバック：中央に index 0 を置いて重複を作る
+    selectedWeapons[centerIdx] = selectedWeapons[0];
+  }
+}
+
 function generateBingo(){
   const size = parseInt(sizeSelect.value, 10);
   const mode = kumaSelect.value;
@@ -473,12 +489,14 @@ function generateBingo(){
 
   let selectedWeapons;
   if (size === 9 && mode !== "kuma_only"){
-    // 9×9：同一武器が3つ以上にならない（最大2回）※クマのみは除外
     selectedWeapons = pickWeaponsCap2(pool, total, 2);
   } else {
     const allowDup = (mode === "kuma_only") || (pool.length < total);
     selectedWeapons = pickWeapons(pool, total, allowDup);
   }
+
+  // 9×9 + FREE ON なら中央を重複武器に
+  ensureCenterIsDuplicateFor9x9(selectedWeapons);
 
   state.board = selectedWeapons.map(w => ({
     weapon: { name: w.name || "", img: w.img || "", tag: normTag(w.tag) },
@@ -508,6 +526,15 @@ lineToggle.addEventListener("change", () => {
   scheduleSave();
 });
 
+freeToggle.addEventListener("change", () => {
+  state.free = !!freeToggle.checked;
+  scheduleSave();
+  // FREE切替で見た目を更新（データは保持）
+  const hasAny = state.board.some(c => !!c.weapon);
+  if (hasAny) renderBingo(state.size);
+  else        renderEmptyGrid(state.size);
+});
+
 sizeSelect.addEventListener("change", () => {
   const newSize = parseInt(sizeSelect.value, 10);
   state.size = newSize;
@@ -524,7 +551,6 @@ kumaSelect.addEventListener("change", () => {
 
 markerStyleSelect.addEventListener("change", () => {
   state.markerStyle = markerStyleSelect.value;
-  // 既存のマークを描き直し
   document.querySelectorAll(".cell").forEach((cell, i) => {
     if (state.board[i].selected) setCellSelected(cell, true);
   });
