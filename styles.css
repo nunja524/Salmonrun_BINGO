@@ -73,9 +73,12 @@ body{
 }
 
 .title-wrap{
-  display:flex; justify-content:center; align-items:center; margin-bottom:12px;
+  display:flex; justify-content:center; align-items:center;
+  margin-bottom: 8px; /* 12px → 8px に */
 }
-
+/* 7×7以上・9×9はさらに詰める（JSでクラス付与） */
+.title-wrap.tight-7{ margin-bottom: 6px; }
+.title-wrap.tight-9{ margin-bottom: 4px; }
 /* ロゴ：白縁はクローン（.title-stroke）で作るので filter は使わない */
 .title-stack{
   position: relative;
@@ -229,8 +232,9 @@ select{
 /* レスポンシブ微調整 */
 @media (max-width:480px){
   :root{ --grid-gap: 6px; --minCell: clamp(44px, 22vw, 80px); }
-  .container{ padding: 10px 8px 52px; }
-  .board-wrap{ padding: 8px; }
+  .container{ padding: 8px 6px 46px; } /* 横の余白をさらに減らす */
+  .capture-area{ padding: 6px; }       /* 縁取りも少し細く */
+  .board-wrap{ padding: 6px; }         /* 内側パネルも圧縮 */
   .btn{ font-size:15px; --padX:16px; --padY:11px; }
 }
 @media (max-width:360px){
@@ -248,4 +252,21 @@ select{
 .mark--img .mark-inner{
   width:68%; aspect-ratio:1/1; background-repeat:no-repeat; background-position:center; background-size:contain;
   image-rendering:auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+}
+/* capture-area：縁取り（フレーム）を細く */
+.capture-area.tight-7{ padding: clamp(6px, 1.2vw, 12px); }
+.capture-area.tight-9{ padding: clamp(4px, 0.9vw, 8px);  }
+
+/* board-wrap：内側パネルの余白を詰める */
+.board-wrap.tight-7{ padding: clamp(8px, 2vw, 16px); }
+.board-wrap.tight-9{ padding: clamp(6px, 1.6vw, 12px); }
+
+/* グリッドの隙間を狭く（セルを大きく） */
+.bingo-grid.tight-7{ --grid-gap: 5px; }
+.bingo-grid.tight-9{ --grid-gap: 3px; }
+
+/* 既存の dense と併用可。極小画面ではさらに圧縮 */
+@media (max-width:480px){
+  .bingo-grid.tight-7{ --grid-gap: 4px; }
+  .bingo-grid.tight-9{ --grid-gap: 2px; }
 }
