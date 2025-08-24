@@ -29,12 +29,22 @@ let currentGridSize = parseInt(sizeSelect.value, 10);
 
 let state = {
   size: currentGridSize,
-  kumaMode: kumaSelect.value,           // exclude | include | kuma_only（HTML側のselectedが反映されます）
-  markerStyle: markerStyleSelect.value, // circle | golden_roe | stamp
+  kumaMode: kumaSelect.value,
+  markerStyle: markerStyleSelect.value,
   jitter: !!jitterToggle.checked,
   showLines: !!lineToggle.checked,
-  board: [], // size*size の配列 { weapon: {name,img,tag} | null, selected: boolean }
+  free: false,   // ★ フリー枠ON/OFF
+  board: [],
 };
+
+const freeToggle = document.getElementById("freeToggle");
+
+freeToggle.addEventListener("change", () => {
+  state.free = !!freeToggle.checked;
+  scheduleSave();
+  renderBingo(state.size); // 再描画
+});
+
 
 // ========= ユーティリティ =========
 const shuffle = (arr) => {
@@ -188,6 +198,17 @@ function renderEmptyGrid(size){
   }
   updateLines();
   drawTitleStrokeCanvas(); // レイアウト変更時は白縁も描き直す
+  // フリー枠を適用
+if (state.free && size % 2 === 1) {
+  const mid = Math.floor(size / 2);
+  const centerIdx = mid * size + mid;
+  state.board[centerIdx].weapon = null;     // 武器なし
+  state.board[centerIdx].selected = false;   // 自動で選択済み扱い
+  const cells = getCells();
+  if (cells[centerIdx]) {
+    cells[centerIdx].classList.add("free");
+  }
+}
 }
 
 function renderBingo(size){
@@ -224,6 +245,18 @@ function renderBingo(size){
   }
   updateLines();
   drawTitleStrokeCanvas();
+  // フリー枠を適用
+if (state.free && size % 2 === 1) {
+  const mid = Math.floor(size / 2);
+  const centerIdx = mid * size + mid;
+  state.board[centerIdx].weapon = null;     // 武器なし
+  state.board[centerIdx].selected = false;   // 自動で選択済み扱い
+  const cells = getCells();
+  if (cells[centerIdx]) {
+    cells[centerIdx].classList.add("free");
+  }
+}
+
 }
 
 // ========= ライン判定 & 描画 =========
@@ -424,6 +457,7 @@ function applyStateToUI(){
   markerStyleSelect.value = state.markerStyle;
   jitterToggle.checked    = !!state.jitter;
   lineToggle.checked      = !!state.showLines;
+  freeToggle.checked = !!state.free;
 }
 
 // ========= 生成 / リセット =========
@@ -540,6 +574,7 @@ window.addEventListener("resize", () => {
     state.markerStyle = loaded.markerStyle ?? state.markerStyle;
     state.jitter      = !!loaded.jitter;
     state.showLines   = loaded.showLines !== false;
+    state.free        = !!loaded.free;
 
     const total = state.size * state.size;
     if (Array.isArray(loaded.board) && loaded.board.length === total){
