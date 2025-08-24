@@ -228,7 +228,7 @@ select{
   }
    .container{
     max-width: 100vw;          /* スマホでは全幅に広げる */
-    padding: 16px 8px 48px;    /* 上 右左 下 */
+    padding: 16px 0 48px;    /* 上 右左 下 */
   }
   .capture-area{ padding: 4px; }
   .capture-core{ padding: 10px; }
@@ -252,7 +252,7 @@ select{
     --grid-gap: 3px;
     --minCell: clamp(40px, 24vw, 70px);
   }
-  .container{   padding: 4px 4px 36px; }
+  .container{   padding: 4px 0 36px; }
   .capture-area{ padding: 2px; }
   .capture-core{ padding: 8px;  }
   .board-wrap{   padding: 3px;  }
