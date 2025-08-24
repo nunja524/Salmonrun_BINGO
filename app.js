@@ -17,7 +17,6 @@ const lineToggle   = document.getElementById("lineToggle");
 const freeToggle   = document.getElementById("freeToggle");
 const btnGenerate  = document.getElementById("btnGenerate");
 const btnReset     = document.getElementById("btnReset");
-const btnTwitter   = document.getElementById("btnTwitter");
 const btnSave      = document.getElementById("btnSave");
 
 const captureArea  = document.getElementById("captureArea");
@@ -401,22 +400,6 @@ async function saveImageOnly(){
   }
 }
 
-async function shareTwitter(){
-  try{
-    const { blob } = await exportBoardAsImage();
-    downloadBlob(blob, buildFilename());
-    const size = state.size;
-    const modeLabel = state.kumaMode === "exclude" ? "クマ無し"
-                     : state.kumaMode === "include" ? "クマ含む"
-                     : "クマのみ";
-    const text = encodeURIComponent(`サモラン・ビンゴ！ ${size}×${size} ／ ${modeLabel}\n#サーモンラン #スプラトゥーン`);
-    const intent = `https://twitter.com/intent/tweet?text=${text}`;
-    window.open(intent, "_blank", "noopener");
-  }catch(e){
-    console.error(e);
-    alert("画像の書き出しに失敗しました。");
-  }
-}
 
 // ========= 保存・復元 =========
 function saveState(){
@@ -518,7 +501,6 @@ function resetBoard(){
 btnGenerate.addEventListener("click", generateBingo);
 btnReset.addEventListener("click", resetBoard);
 btnSave.addEventListener("click", saveImageOnly);
-btnTwitter.addEventListener("click", shareTwitter);
 
 lineToggle.addEventListener("change", () => {
   state.showLines = !!lineToggle.checked;

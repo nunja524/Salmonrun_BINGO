@@ -157,7 +157,8 @@ body{
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: clamp(16px, 4vw, 28px);
+  font-size: 85%;              /* ← マスの横幅70%に */
+  line-height: 1;
   color: var(--accent);
   text-shadow: 1px 1px 3px rgba(0,0,0,.6);
   z-index: 1;
@@ -294,4 +295,23 @@ select{
 .mark--img .mark-inner{
   width:68%; aspect-ratio:1/1; background-repeat:no-repeat; background-position:center; background-size:contain;
   image-rendering:auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+}
+.contact-link {
+  display: inline-block;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: var(--twitter);      /* 青いボタン色を流用 */
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,.25);
+  transition: background-color .15s ease, transform .06s ease;
+}
+.contact-link:hover {
+  background: var(--twitter-press);
+  transform: translateY(-1px);
+}
+.contact-link:active {
+  transform: translateY(1px) scale(.99);
 }
