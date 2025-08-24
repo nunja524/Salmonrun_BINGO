@@ -1,6 +1,7 @@
 // ========= 設定 =========
-const JSON_PATH   = "weapons.json";
-const BASE_STORAGE_KEY = "salmon_bingo_v1"; // ← 1カード=1キーの形式で保存します
+const JSON_PATH         = "weapons.json";
+const BASE_STORAGE_KEY  = "salmon_bingo_v1"; // 1カード=1キーで保存
+const LATEST_POINTER_KEY = `${BASE_STORAGE_KEY}:LATEST`; // 直近カードへのポインタ
 
 // ロゴ白縁のチューニング（必要なら調整）
 const TITLE_STROKE_THICKNESS = 2.0;  // 白縁の太さ(px)
@@ -69,6 +70,22 @@ function mulberry32(a){
 function makeRng(seedStr){ return mulberry32(seedFromString(seedStr)); }
 function newSeed(){
   return (Date.now().toString(36) + Math.random().toString(36).slice(2,8)).toUpperCase();
+}
+
+// ========= LATEST ポインタ =========
+function markAsLatest(key){
+  try{ localStorage.setItem(LATEST_POINTER_KEY, key); }catch(e){ /* noop */ }
+}
+function loadLatestState(){
+  try{
+    const key = localStorage.getItem(LATEST_POINTER_KEY);
+    if (!key) return null;
+    const j = localStorage.getItem(key);
+    return j ? JSON.parse(j) : null;
+  }catch(e){
+    console.warn("最新カードの読み込みに失敗:", e);
+    return null;
+  }
 }
 
 // ========= ユーティリティ =========
@@ -381,7 +398,7 @@ async function exportBoardAsImage(){
   if (!target) throw new Error("キャプチャ対象が見つかりません。");
 
   updateLines();
-  drawTitleStrokeCanvas();
+  drawTitleStrokeCanvas(); // 保存直前に白縁を最新化
 
   setCleanCaptureMode(true);
   await new Promise(r => requestAnimationFrame(r));
@@ -437,7 +454,10 @@ function saveState(){
   try{
     const key = currentStorageKey();
     localStorage.setItem(key, JSON.stringify(state));
-  }catch(e){ console.warn("状態の保存に失敗:", e); }
+    markAsLatest(key); // ← 直近カードのポインタを更新
+  }catch(e){
+    console.warn("状態の保存に失敗:", e);
+  }
 }
 let saveTimer = null;
 function scheduleSave(){
@@ -478,7 +498,13 @@ function buildShareUrl(){
 function updateShareBox(){
   const link = buildShareUrl();
   if (shareUrlInput) shareUrlInput.value = link;
-  history.replaceState(null, "", link);
+  // ← アドレスバーは更新しない（履歴を汚さない）
+}
+
+// URLクリーンアップ（seed等を消してパスだけにする）
+function cleanAddressBar(){
+  const clean = location.origin + location.pathname;
+  history.replaceState(null, "", clean);
 }
 
 // ========= 生成 / リセット =========
@@ -544,7 +570,7 @@ function generateBingo(){
   currentSeed = newSeed();
   state.seed  = currentSeed;
   generateWithSeed(currentSeed);
-  updateShareBox();
+  updateShareBox(); // 共有用テキストのみ更新（アドレスバーは据え置き）
 }
 
 // すべてのマークを外す（盤面・武器構成は維持）
@@ -583,7 +609,6 @@ copyUrlBtn?.addEventListener("click", async ()=>{
   }
 });
 
-// UI変更で共有URLを更新（seedは固定/未指定は空のまま）
 lineToggle.addEventListener("change", () => {
   state.showLines = !!lineToggle.checked;
   updateLines();
@@ -652,35 +677,37 @@ window.addEventListener("resize", () => {
     alert("武器データの読み込みに失敗しました。HTTP環境（例: GitHub Pages）で開いているか、JSONパスをご確認ください。");
   }
 
-  // URLが指定されている場合は、そのカード専用の保存データを探す
+  // URLにseedがある：そのカードを復元 → 保存 → アドレスバーをクリーン化
   if (urlSeed){
     state.seed = urlSeed;
-    const loaded = loadStateBy(urlSeed,
-                               state.size,
-                               state.kumaMode,
-                               state.free);
+    const loaded = loadStateBy(urlSeed, state.size, state.kumaMode, state.free);
     applyStateToUI();
 
     if (loaded && Array.isArray(loaded.board) && loaded.board.length === state.size*state.size){
-      // 共有URLのカードに対するローカル保存があれば、それを優先（マークも復元）
-      state = {
-        ...state,
-        ...loaded,
-        seed: urlSeed, // 念のため固定
-      };
+      state = { ...state, ...loaded, seed: urlSeed };
       renderBingo(state.size);
     }else{
-      // ローカル保存が無ければ、URLシードで新規生成
       generateWithSeed(urlSeed);
     }
+
+    // 現在表示中のカードを保存して直近ポインタ更新 → アドレスバーからクエリ削除
+    saveState();
+    cleanAddressBar();
+
   }else{
-    // URLにseedが無い場合は、最後に遊んだカード（seed含む）を探す（直近のキーを探すのは難しいのでfallback）
-    // 既存の固定キー保存からの復元はやめ、空盤面から開始
-    applyStateToUI();
-    renderEmptyGrid(state.size);
+    // URLにseedが無い：直近カードを復元して表示
+    const last = loadLatestState();
+    if (last && Array.isArray(last.board) && last.board.length === (last.size * last.size)) {
+      state = { ...state, ...last };
+      applyStateToUI();
+      renderBingo(state.size);
+    } else {
+      applyStateToUI();
+      renderEmptyGrid(state.size);
+    }
   }
 
-  // 共有URL 初期表示
+  // 共有URL 初期表示（アドレスバーは触らない）
   updateShareBox();
 
   // ロゴ白縁 初回描画
