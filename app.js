@@ -508,7 +508,12 @@ function resetBoardMarks(){
 
 // ========= イベント =========
 btnGenerate.addEventListener("click", generateBingo);
-btnReset.addEventListener("click", resetBoardMarks);
+// 置き換え
+btnReset.addEventListener("click", (e) => {
+  e.preventDefault();   // フォーム送信防止
+  e.stopPropagation();  // 親のクリック等への伝播防止
+  resetBoardMarks();
+});
 btnSave.addEventListener("click", saveImageOnly);
 
 lineToggle.addEventListener("change", () => {
