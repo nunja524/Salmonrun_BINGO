@@ -33,17 +33,10 @@ body{
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
-.control-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 8px;
-}
 
 .container{
   max-width: min(1100px, 94vw);
-  padding: 16px max(3vw, 12px) 64px;
+  padding: 16px 0 64px;
   margin: 0 auto;
 }
 
@@ -62,7 +55,7 @@ body{
   background-clip: padding-box;
 }
 
-/* キャプチャ時に線の出やすい影/ボーダーを無効化 */
+/* キャプチャ時に線の出やすい影/ボーダーを無効化（黒線対策） */
 .capture-clean .capture-core,
 .capture-clean .board-wrap{
   box-shadow: none !important;
@@ -72,25 +65,23 @@ body{
   background-clip: padding-box !important;
 }
 
+/* タイトル */
 .title-wrap{
   display:flex; justify-content:center; align-items:center;
-  margin-bottom: 8px; /* 12px → 8px に */
+  margin-bottom: 8px; /* ロゴと盤面の隙間を少し詰める */
 }
-/* 7×7以上・9×9はさらに詰める（JSでクラス付与） */
+/* 7×7以上でさらに詰める（JSがクラス付与） */
 .title-wrap.tight-7{ margin-bottom: 6px; }
 .title-wrap.tight-9{ margin-bottom: 4px; }
-/* ロゴ：白縁はクローン（.title-stroke）で作るので filter は使わない */
-.title-stack{
-  position: relative;
-  display: inline-block;
-  width: min(560px, 92%);   /* ← 幅指定をコンテナへ */
-}
+
+.title-stack{ position: relative; display: inline-block; width: min(560px, 92%); }
 .title-image{
-  width: 100%;              /* ← 画像はコンテナにフィット */
+  width: 100%;
   height: auto;
   position: relative;
-  z-index: 1;
+  z-index: 1; /* キャンバス白縁の上に表示 */
 }
+/* ロゴ白縁用キャンバス（描画はJS） */
 .title-stroke-canvas{
   position: absolute;
   inset: 0;
@@ -99,20 +90,8 @@ body{
   z-index: 0;
   pointer-events: none;
 }
-/* 生成される白縁クローン */
-.title-stroke{
-  position:absolute;
-  inset:0;
-  width: 100%;              /* ← 追加 */
-  height: 100%;             /* ← 追加 */
-  object-fit: contain;      /* ← 念のため */
-  z-index:0;
-  pointer-events:none;
-  filter:none;
-  opacity:1;
-  mix-blend-mode:normal;
-}
 
+/* 盤面パネル */
 .board-wrap{
   background: var(--panel);
   border-radius: var(--radius-panel);
@@ -122,7 +101,6 @@ body{
   touch-action: manipulation;
   overflow: hidden;
 }
-
 .board-layer{ position: relative; }
 
 /* グリッド */
@@ -136,11 +114,15 @@ body{
 .bingo-grid.dense{ --grid-gap: 6px; }
 .bingo-grid.dense .cell{ min-width: 0; }
 
-/* さらに狭い画面ではgapも圧縮 */
-@media (max-width:480px){ .bingo-grid.dense{ --grid-gap: 4px; } }
-@media (max-width:360px){ .bingo-grid.dense{ --grid-gap: 3px; } }
+/* 7×7以上でさらに詰める（セルを大きく） */
+.capture-area.tight-7{ padding: clamp(6px, 1.2vw, 12px); }
+.capture-area.tight-9{ padding: clamp(4px, 0.9vw, 8px);  }
+.board-wrap.tight-7{   padding: clamp(8px, 2vw, 16px);   }
+.board-wrap.tight-9{   padding: clamp(6px, 1.6vw, 12px); }
+.bingo-grid.tight-7{   --grid-gap: 5px; }
+.bingo-grid.tight-9{   --grid-gap: 3px; }
 
-/* セル（正方形を::beforeで厳密維持） */
+/* セル（::beforeで正方形維持） */
 .cell{
   background: var(--cell);
   border-radius: var(--radius-cell);
@@ -178,7 +160,15 @@ body{
 /* コントロール */
 .controls{
   margin: 14px auto 10px;
-  display:flex; gap:10px; row-gap:10px; flex-wrap:wrap; align-items:center; justify-content:center;
+  display:flex; flex-direction: column; gap: 8px;
+  align-items:center; justify-content:center;
+}
+.control-row{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 2px;
 }
 .control-item{
   display:flex; align-items:center; gap:8px;
@@ -229,17 +219,50 @@ select{
 .btn--twitter:hover{ background: var(--twitter-press); }
 .btn .icon{ width:20px; height:20px; display:block; }
 
-/* レスポンシブ微調整 */
+/* ================== スマホ最適化 ================== */
+/* 480px以下：ほぼフルブリードでセル最大化 */
 @media (max-width:480px){
-  :root{ --grid-gap: 6px; --minCell: clamp(44px, 22vw, 80px); }
-  .container{ padding: 8px 6px 46px; } /* 横の余白をさらに減らす */
-  .capture-area{ padding: 6px; }       /* 縁取りも少し細く */
-  .board-wrap{ padding: 6px; }         /* 内側パネルも圧縮 */
-  .btn{ font-size:15px; --padX:16px; --padY:11px; }
+  :root{
+    --grid-gap: 4px;
+    --minCell: clamp(44px, 22vw, 80px);
+  }
+   .container{
+    max-width: 100vw;          /* スマホでは全幅に広げる */
+    padding: 16px 8px 48px;    /* 上 右左 下 */
+  }
+  .capture-area{ padding: 4px; }
+  .capture-core{ padding: 10px; }
+  .board-wrap{  padding: 4px;  }
+  .title-wrap{  margin-bottom: 6px; }
+
+  /* 7×7以上はさらに詰める */
+  .capture-area.tight-7{ padding: 3px; }
+  .capture-area.tight-9{ padding: 2px; }
+  .board-wrap.tight-7{  padding: 4px; }
+  .board-wrap.tight-9{  padding: 3px; }
+  .bingo-grid.tight-7{  --grid-gap: 3px; }
+  .bingo-grid.tight-9{  --grid-gap: 2px; }
+
+  .btn{ font-size:15px; --padX:16px; --padY:10px; }
 }
+
+/* 360px以下：超小型端末の最終圧縮 */
 @media (max-width:360px){
-  :root{ --grid-gap: 5px; --minCell: clamp(40px, 24vw, 70px); }
-  .cell{ min-width:0; } /* 端末極小時の幅制約解除 */
+  :root{
+    --grid-gap: 3px;
+    --minCell: clamp(40px, 24vw, 70px);
+  }
+  .container{   padding: 4px 4px 36px; }
+  .capture-area{ padding: 2px; }
+  .capture-core{ padding: 8px;  }
+  .board-wrap{   padding: 3px;  }
+  .title-wrap{   margin-bottom: 4px; }
+
+  .bingo-grid.tight-7{ --grid-gap: 2px; }
+  .bingo-grid.tight-9{ --grid-gap: 1.5px; }
+
+  /* 端末極小時の幅制約解除（セルを縮めてはみ出し回避） */
+  .cell{ min-width: 0; }
 }
 
 /* マーク（○／画像） */
@@ -252,21 +275,4 @@ select{
 .mark--img .mark-inner{
   width:68%; aspect-ratio:1/1; background-repeat:no-repeat; background-position:center; background-size:contain;
   image-rendering:auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
-}
-/* capture-area：縁取り（フレーム）を細く */
-.capture-area.tight-7{ padding: clamp(6px, 1.2vw, 12px); }
-.capture-area.tight-9{ padding: clamp(4px, 0.9vw, 8px);  }
-
-/* board-wrap：内側パネルの余白を詰める */
-.board-wrap.tight-7{ padding: clamp(8px, 2vw, 16px); }
-.board-wrap.tight-9{ padding: clamp(6px, 1.6vw, 12px); }
-
-/* グリッドの隙間を狭く（セルを大きく） */
-.bingo-grid.tight-7{ --grid-gap: 5px; }
-.bingo-grid.tight-9{ --grid-gap: 3px; }
-
-/* 既存の dense と併用可。極小画面ではさらに圧縮 */
-@media (max-width:480px){
-  .bingo-grid.tight-7{ --grid-gap: 4px; }
-  .bingo-grid.tight-9{ --grid-gap: 2px; }
 }

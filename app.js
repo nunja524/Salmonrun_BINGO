@@ -4,7 +4,7 @@ const STORAGE_KEY = "salmon_bingo_v1";
 
 // ロゴ白縁のチューニング（必要なら調整）
 const TITLE_STROKE_THICKNESS = 2.0;  // 白縁の太さ(px)
-const TITLE_STROKE_Y_OFFSET  = 0;    // 白縁の全体的な上下補正（上へ -1 / 下へ +1 など）
+const TITLE_STROKE_Y_OFFSET  = -2;    // 白縁の全体的な上下補正（上へ -1 / 下へ +1 など）
 
 // ========= DOM取得 =========
 const bingoEl      = document.getElementById("bingo");
